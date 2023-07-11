@@ -16,7 +16,7 @@ public class HelpLines
 " print all                                 § Print variables\n"+
 " pop table                                 § Pop and remove the current symbol table.\n"+
 " new table \"<name>\"               § Create a new symbol table and push it on the stack.\n"+
-" set default format {plain|terminal|tex|htmq} § Set the default format for rendering.\n"+
+" set default format {plain|terminal|tex|htmq|why} § Set the default format for rendering.\n"+
 " set default hiding {nol|noc}                 § Set what parts to hide by default.\n"+
 " show formula {types} {<format>} \"<formula>\" § Parse the formula using the current symbol table and render it.\n"+
 " show part {framed} {<format>} \"<part>\"      § Show the Event-B part, eg Elevator/invariants/inv1\n"+

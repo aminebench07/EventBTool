@@ -56,6 +56,23 @@ public class SymbolTable
     private Map<String,Constant> constants_ = new HashMap<>();
     private Set<String> number_symbols_ = new HashSet<>(); // NM
     private Set<String> any_symbols_ = new HashSet<>(); // ABC
+    // AH
+    private Set<String> operator_symbols_ = new HashSet<>();
+    private Map<String,Operator> operators_ = new HashMap<>();
+    // AH
+    private Set<String> type_parameter_symbols_ = new HashSet<>();
+    private Map<String,TypeParameters> type_parameters_ = new HashMap<>();
+    // AH
+    private Set<String> datatype_symbols_ = new HashSet<>();
+    private Map<String, Datatype> datatypes_ = new HashMap<>();
+    // AH
+    private Set<String> constructor_symbols_ = new HashSet<>();
+    private Map<String, Operator> constructors_ = new HashMap<>();
+    // AH
+    private Set<String> destructor_symbols_ = new HashSet<>();
+    // AH
+    private Set<String> typedef_symbols_ = new HashSet<>();
+    private Map<String, TypeDef> typedefs_ = new HashMap<>();
 
     private LinkedList<Frame> frames_ = new LinkedList<>();
 
@@ -391,6 +408,290 @@ public class SymbolTable
     {
         number_symbols_.addAll(s);
     }
+
+    // AH
+    public boolean isOperatorSymbol(String c)
+    {
+        boolean is = operator_symbols_.contains(c);
+        if (is) return true;
+        for (SymbolTable parent : parents_)
+        {
+            is = parent.isOperatorSymbol(c);
+            if (is) return true;
+        }
+        return false;
+    }
+
+    public Operator getOperator(Formula name)
+    {
+        return getOperator(name.symbol());
+    }
+
+    public Operator getOperator(String name)
+    {
+        Operator var = operators_.get(name);
+        if (var != null) return var;
+        for (SymbolTable parent : parents_)
+        {
+            var = parent.getOperator(name);
+            if (var != null) return var;
+        }
+        return null;
+    }
+
+    public void addOperatorSymbol(String s)
+    {
+        operator_symbols_.add(s);
+    }
+
+    public void addOperator(Operator op)
+    {
+        operator_symbols_.add(op.name());
+        operators_.put(op.name(), op);
+    }
+
+    public void addOperatorSymbols(String... s)
+    {
+        operator_symbols_.addAll(Arrays.asList(s));
+    }
+
+    public void addOperatorSymbols(List<String> s)
+    {
+        operator_symbols_.addAll(s);
+    }
+
+    // AH
+    public boolean isTypeParameterSymbol(String s)
+    {
+        boolean is = type_parameter_symbols_.contains(s);
+        if (is) return true;
+        for (SymbolTable parent : parents_)
+        {
+            is = parent.isTypeParameterSymbol(s);
+            if (is) return true;
+        }
+        return false;
+    }
+
+    public TypeParameters getTypeParameterSymbol(Formula name)
+    {
+        return getTypeParameter(name.symbol());
+    }
+
+    public TypeParameters getTypeParameter(String name)
+    {
+        TypeParameters typeParameter = type_parameters_.get(name);
+        if (typeParameter != null) return typeParameter;
+        for (SymbolTable parent : parents_)
+        {
+            typeParameter = parent.getTypeParameter(name);
+            if (typeParameter != null) return typeParameter;
+        }
+        return null;
+    }
+
+    public void addTypeParameterSymbol(String s)
+    {
+        type_parameter_symbols_.add(s);
+    }
+
+    public void addTypeParameter(TypeParameters ta)
+    {
+        type_parameter_symbols_.add(ta.name());
+        type_parameters_.put(ta.name(), ta);
+    }
+
+    public void addTypeParameterSymbols(String... s)
+    {
+        type_parameter_symbols_.addAll(Arrays.asList(s));
+    }
+
+    public void addTypeParameterSymbols(List<String> s)
+    {
+        type_parameter_symbols_.addAll(s);
+    }
+
+    // AH
+    public boolean isDatatypeSymbol(String s)
+    {
+        boolean is = datatype_symbols_.contains(s);
+        if (is) return true;
+        for (SymbolTable parent : parents_)
+        {
+            is = parent.isDatatypeSymbol(s);
+            if (is) return true;
+        }
+        return false;
+    }
+
+    public Datatype getDatatypeSymbol(Formula name)
+    {
+        return getDatatype(name.symbol());
+    }
+
+    public Datatype getDatatype(String name)
+    {
+        Datatype datatype = datatypes_.get(name);
+        if (datatype != null) return datatype;
+        for (SymbolTable parent : parents_)
+        {
+            datatype = parent.getDatatype(name);
+            if (datatype != null) return datatype;
+        }
+        return null;
+    }
+
+    public void addDatatypeSymbol(String s)
+    {
+        datatype_symbols_.add(s);
+    }
+
+    public void addDatatype(Datatype dt)
+    {
+        datatype_symbols_.add(dt.name());
+        datatypes_.put(dt.name(), dt);
+    }
+
+    public void addDatatypeSymbols(String... s)
+    {
+        datatype_symbols_.addAll(Arrays.asList(s));
+    }
+
+    public void addDatatypeSymbols(List<String> s)
+    {
+        datatype_symbols_.addAll(s);
+    }
+
+    // AH
+    public boolean isConstructorSymbol(String s)
+    {
+        boolean is = constructor_symbols_.contains(s);
+        if (is) return true;
+        for (SymbolTable parent : parents_)
+        {
+            is = parent.isConstructorSymbol(s);
+            if (is) return true;
+        }
+        return false;
+    }
+
+    public Operator getConstructorSymbol(Formula name)
+    {
+        return getConstructor(name.symbol());
+    }
+
+    public Operator getConstructor(String name)
+    {
+        Operator constructor = constructors_.get(name);
+        if (constructor != null) return constructor;
+        for (SymbolTable parent : parents_)
+        {
+            constructor = parent.getConstructor(name);
+            if (constructor != null) return constructor;
+        }
+        return null;
+    }
+
+    public void addConstructorSymbol(String s)
+    {
+        constructor_symbols_.add(s);
+    }
+
+    public void addConstructor(Operator cons)
+    {
+        constructor_symbols_.add(cons.name());
+        constructors_.put(cons.name(), cons);
+    }
+
+    public void addConstructorSymbols(String... s)
+    {
+        constructor_symbols_.addAll(Arrays.asList(s));
+    }
+
+    public void addConstructorSymbols(List<String> s)
+    {
+        constructor_symbols_.addAll(s);
+    }
+
+    // AH
+    public boolean isDestructorSymbol(String s)
+    {
+        boolean is = destructor_symbols_.contains(s);
+        if (is) return true;
+        for (SymbolTable parent : parents_)
+        {
+            is = parent.isDestructorSymbol(s);
+            if (is) return true;
+        }
+        return false;
+    }
+
+    public void addDestructorSymbol(String s)
+    {
+        destructor_symbols_.add(s);
+    }
+
+    public void addDestructorSymbols(String... s)
+    {
+        destructor_symbols_.addAll(Arrays.asList(s));
+    }
+
+    public void addDestructorSymbols(List<String> s)
+    {
+        destructor_symbols_.addAll(s);
+    }
+
+    // AH
+    public boolean isTypedefSymbol(String s)
+    {
+        boolean is = typedef_symbols_.contains(s);
+        if (is) return true;
+        for (SymbolTable parent : parents_)
+        {
+            is = parent.isTypedefSymbol(s);
+            if (is) return true;
+        }
+        return false;
+    }
+
+    public TypeDef getTypedefSymbol(Formula name)
+    {
+        return getTypedef(name.symbol());
+    }
+
+    public TypeDef getTypedef(String name)
+    {
+        TypeDef td = typedefs_.get(name);
+        if (td != null) return td;
+        for (SymbolTable parent : parents_)
+        {
+            td = parent.getTypedef(name);
+            if (td != null) return td;
+        }
+        return null;
+    }
+
+    public void addTypedefSymbol(String s)
+    {
+        typedef_symbols_.add(s);
+    }
+
+    public void addTypedef(TypeDef td)
+    {
+        typedef_symbols_.add(td.name());
+        typedefs_.put(td.name(), td);
+    }
+
+    public void addTypedefSymbols(String... s)
+    {
+        typedef_symbols_.addAll(Arrays.asList(s));
+    }
+
+    public void addTypedefSymbols(List<String> s)
+    {
+        typedef_symbols_.addAll(s);
+    }
+
 
     public boolean isAnySymbol(String p)
     {

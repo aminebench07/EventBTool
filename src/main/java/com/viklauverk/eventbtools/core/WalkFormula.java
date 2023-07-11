@@ -51,6 +51,8 @@ public class WalkFormula implements FormulaVisitor
     public Formula visit_PREDICATE_SYMBOL(Formula i) { return i; }
     public Formula visit_EXPRESSION_SYMBOL(Formula i) { return i; }
     public Formula visit_SET_SYMBOL(Formula i) { return i; }
+    public Formula visit_TYPE_PARAMETER_SYMBOL(Formula i) { return i; } // AH
+    public Formula visit_TYPEDEF_SYMBOL(Formula i) { return i; } // AH
     public Formula visit_VARIABLE_SYMBOL(Formula i) { return i; }
     public Formula visit_VARIABLE_PRIM_SYMBOL(Formula i) { return i; }
     public Formula visit_VARIABLE_NONFREE_SYMBOL(Formula i) { return i; }
@@ -147,12 +149,35 @@ public class WalkFormula implements FormulaVisitor
     public Formula visit_MAPSTO(Formula i) { visitLeft(i); visitRight(i); return i; }
     public Formula visit_FUNC_APP(Formula i) { visitLeft(i); visitRight(i); return i; }
     public Formula visit_FUNC_INV_APP(Formula i) { visitLeft(i); visitRight(i); return i; }
+    public Formula visit_OPERATOR_EXPRESSION(Formula i) { visitChildren(i, ()->{}); return i; }         // AH
+    public Formula visit_INFIX_OPERATOR_EXPRESSION(Formula i) { visitChildren(i, ()->{}); return i; }   // AH
+    public Formula visit_DATATYPE(Formula i) { visitChildren(i, ()->{}); return i; }                    // AH
+    public Formula visit_CONSTRUCTOR(Formula i) { visitChildren(i, ()->{}); return i; }                 // AH
+    public Formula visit_DESTRUCTOR(Formula i) { visitChildren(i, ()->{}); return i; }                 // AH
     public Formula visit_META(Formula i) { return i; }
 
+    // AH
+    // These are for when you want to distinguish types from sets (eg. Why3).
+    // Only implement them if needed.
+    public Formula visit_TYPED(Formula i) { return i; }
+    public Formula visit_TYPED_INT_SET(Formula i) { return i; }
+    public Formula visit_TYPED_RELATION(Formula i) { visitLeft(i); visitRight(i); return i; }
+    public Formula visit_TYPED_CARTESIAN_PRODUCT(Formula i) { visitLeft(i); visitRight(i); return i; }
+    public Formula visit_TYPED_POWER_SET(Formula i) { visitChild(i);  return i; }
+    public Formula visit_TYPED_DATATYPE(Formula i) { visitChildren(i, ()->{}); return i; }
+    public Formula visit_TYPED_TYPE_PARAMETER_SYMBOL(Formula i) { return i; }
+    public Formula visit_TYPED_TYPEDEF_SYMBOL(Formula i) { return i; }
+    public Formula visit_TYPED_PARENTHESISED_EXPRESSION(Formula i) { visitChild(i); return i; }
 
     Formula startVisiting(Formula i)
     {
         Formula ii = innerVisit(i);
+        return ii;
+    }
+
+    Formula startVisitingTyped(Formula i)
+    {
+        Formula ii = innerVisitTyped(i);
         return ii;
     }
 
@@ -177,6 +202,8 @@ public class WalkFormula implements FormulaVisitor
         case PREDICATE_SYMBOL: i = visit_PREDICATE_SYMBOL(i); break;
         case EXPRESSION_SYMBOL: i = visit_EXPRESSION_SYMBOL(i); break;
         case SET_SYMBOL: i = visit_SET_SYMBOL(i); break;
+        case TYPE_PARAMETER_SYMBOL: i = visit_TYPE_PARAMETER_SYMBOL(i); break; // AH
+        case TYPEDEF_SYMBOL: i = visit_TYPEDEF_SYMBOL(i); break; // AH
         case VARIABLE_SYMBOL: i = visit_VARIABLE_SYMBOL(i); break;
         case VARIABLE_PRIM_SYMBOL: i = visit_VARIABLE_PRIM_SYMBOL(i); break;
         case VARIABLE_NONFREE_SYMBOL: i = visit_VARIABLE_NONFREE_SYMBOL(i); break;
@@ -271,9 +298,40 @@ public class WalkFormula implements FormulaVisitor
         case MAPSTO: i = visit_MAPSTO(i); break;
         case FUNC_APP: i = visit_FUNC_APP(i); break;
         case FUNC_INV_APP: i = visit_FUNC_INV_APP(i); break;
+        case OPERATOR_EXPRESSION: i = visit_OPERATOR_EXPRESSION(i); break;              // AH
+        case INFIX_OPERATOR_EXPRESSION: i = visit_INFIX_OPERATOR_EXPRESSION(i); break;  // AH
+        case DATATYPE: i = visit_DATATYPE(i); break;                                    // AH
+        case CONSTRUCTOR: i = visit_CONSTRUCTOR(i); break;                              // AH
+        case DESTRUCTOR: i = visit_DESTRUCTOR(i); break;                               // AH
         default: System.err.println("NOT IMPLEMENTED SWITCH FOR "+s); System.exit(1); break;
         }
 
+        exitNode(ii);
+        return i;
+    }
+
+    // AH
+    /** This allows to visit formulas when you want a type and not a set. This is meant to be used for why3. */
+    Formula innerVisitTyped(Formula ii)
+    {
+        if (ii == null) return null;
+        Formula i = ii;
+        Node s = i.node();
+
+        enterNode(ii);
+        switch (s)
+        {
+        case INT_SET: i = visit_TYPED_INT_SET(i); break;
+        case NAT_SET: i = visit_TYPED_INT_SET(i); System.out.println("Careful, you typed an expression with NAT, defaulted to INT."); break;
+        case RELATION: i = visit_TYPED_RELATION(i); break;
+        case CARTESIAN_PRODUCT: i = visit_TYPED_CARTESIAN_PRODUCT(i); break;
+        case POWER_SET: i = visit_TYPED_POWER_SET(i); break;
+        case DATATYPE: i = visit_TYPED_DATATYPE(i); break;
+        case TYPEDEF_SYMBOL: i = visit_TYPED_TYPEDEF_SYMBOL(i); break;
+        case TYPE_PARAMETER_SYMBOL: i = visit_TYPED_TYPE_PARAMETER_SYMBOL(i); break;
+        case PARENTHESISED_EXPRESSION: i = visit_TYPED_PARENTHESISED_EXPRESSION(i); break;
+        default: System.err.println("NOT IMPLEMENTED TYPED SWITCH FOR "+s); System.exit(1); break;
+        }
         exitNode(ii);
         return i;
     }
@@ -283,9 +341,21 @@ public class WalkFormula implements FormulaVisitor
         return innerVisit(f.left());
     }
 
+    // AH
+    Formula visitLeftTyped(Formula f)
+    {
+        return innerVisitTyped(f.left());
+    }
+
     Formula visitRight(Formula f)
     {
         return innerVisit(f.right());
+    }
+
+    // AH
+    Formula visitRightTyped(Formula f)
+    {
+        return innerVisitTyped(f.right());
     }
 
     Formula visitChild(Formula f)
@@ -293,9 +363,21 @@ public class WalkFormula implements FormulaVisitor
         return innerVisit(f.child());
     }
 
+    // AH
+    Formula visitChildTyped(Formula f)
+    {
+        return innerVisitTyped(f.child());
+    }
+
     Formula visitChildNum(Formula f, int n)
     {
         return innerVisit(f.child(n));
+    }
+
+    // AH
+    Formula visitChildNumTyped(Formula f, int n)
+    {
+        return innerVisitTyped(f.child(n));
     }
 
     Formula visitChildren(Formula f, Runnable inbetween)
@@ -304,6 +386,17 @@ public class WalkFormula implements FormulaVisitor
         {
             if (i > 0) inbetween.run();
             innerVisit(f.child(i));
+        }
+        return f;
+    }
+
+    // AH
+    Formula visitChildrenTyped(Formula f, Runnable inbetween)
+    {
+        for (int i = 0; i < f.numChildren(); ++i)
+        {
+            if (i > 0) inbetween.run();
+            innerVisitTyped(f.child(i));
         }
         return f;
     }

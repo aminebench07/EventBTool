@@ -43,6 +43,10 @@ public class Sys
     private Map<String,SymbolTable> all_symbol_tables_;
     private Typing typing_;
 
+    private Map<String,Map<String,Theory>> theories_; // Directory, theory name, theory
+    private List<Theory> theorie_ordering_; // All theories
+    private Map<String,List<String>> theorie_names_; // Directory, theory names
+
     private Map<String,Context> contexts_;
     private List<Context> context_ordering_;
     private List<String> context_names_;
@@ -59,6 +63,9 @@ public class Sys
     {
         project_info_ = "";
 
+        theories_ = new HashMap<>();
+        theorie_ordering_ = new ArrayList<>();
+        theorie_names_ = new HashMap<>();
         contexts_ = new HashMap<>();
         context_ordering_ = new ArrayList<>();
         context_names_ = new ArrayList<>();
@@ -150,6 +157,84 @@ public class Sys
         return typing_;
     }
 
+    public void addTheory(Theory t)
+    {
+        if (!theoryOrdering().contains(t))
+        {
+            if (!theories_.containsKey(t.dir())) theories_.put(t.dir(), new HashMap<>());
+            theories_.get(t.dir()).put(t.localName(), t);
+            theorie_ordering_.add(t);
+            if (!theorie_names_.containsKey(t.dir())) theorie_names_.put(t.dir(), new ArrayList<>());
+            theorie_names_.get(t.dir()).add(t.localName());
+        }
+    }
+
+    public Theory getTheory(String dir, String name)
+    {
+        if (!theories_.containsKey(dir)) return null;
+        return theories_.get(dir).get(name);
+    }
+
+    public List<Theory> theoryOrdering()
+    {
+        return theorie_ordering_;
+    }
+
+    /** This will only affect theory_ordering_ hence the other lists and/or mappings won't have the same order anymore */
+    private void orderTheoriesDependingOnImports()
+    {
+        List<Theory> new_th_ordering = new ArrayList<>();
+
+        // Add the theories in the right order to the new list
+        int i = 0;
+        while (!theorie_ordering_.isEmpty())
+        {
+            Theory current_th = theorie_ordering_.get(i);
+            // can we add the current theory ?
+            boolean found = true;
+            for (Theory th_import : current_th.importsOrdering())
+            {
+                if (!new_th_ordering.contains(th_import)) found = false;
+            }
+            if (found) 
+            {
+                new_th_ordering.add(current_th);
+                theorie_ordering_.remove(i);
+                i = 0;
+            }
+            else i++;
+        }
+        theorie_ordering_ = new_th_ordering;
+    }
+
+    /** Returns the mapping of Directory -> Theories */
+    public Map<String,List<String>> theoryMapping()
+    {
+        return theorie_names_;
+    }
+
+    /** Returns the name of all theories in the form of Directory/TheoryName */
+    public List<String> theoryFullNames()
+    {
+        List<String> result = new ArrayList<>();
+        for (Theory th : theoryOrdering())
+        {
+            result.add(th.name());
+        }
+        return result;
+    }
+
+    /** This return the local name of all theories */
+    public List<String> theoryNames()
+    {
+        Stream<String> resultStream = Stream.empty();
+        for (String dir : theorie_names_.keySet())
+        {
+            resultStream = Stream.concat(resultStream, theorie_names_.get(dir).stream());
+        }
+        return resultStream.collect(Collectors.toList());
+    }
+
     public void addContext(Context c)
     {
         contexts_.put(c.name(), c);
@@ -194,6 +279,7 @@ public class Sys
         return machine_names_;
     }
 
+    //TODO Bad name :c
     public String loadMachinesAndContexts(String path) throws Exception
     {
         if (path == null || path.equals("")) return "";
@@ -206,6 +292,7 @@ public class Sys
         }
 
         // First create empty object instances for each context and machine.
+        populateTheories(dir);
         populateContexts(dir);
         populateMachines(dir);
 
@@ -214,23 +301,29 @@ public class Sys
         // These will also add the known symbols for sets,constants and variables
         // to the SymbolTables that are needed for parsing the formulas.
         // These will also load the checked types calculated by Rodin.
+        loadTheories(); // At this point all imported theories are loaded and will be treated normally
         loadContexts();
         loadMachines();
 
+        // Order the theories depending on their imports so they are ordered properly in the file.
+        //TODO: remove this and instead make one file for each theory and import them from distant files
+        orderTheoriesDependingOnImports();
+
         // Now we can actually build the symbol tables and parse the formulas and
         // figure out suitable implementation types and parse the checked types.
+        parseTheoryFormulas();
         parseContextFormulas();
         parseMachineFormulas();
 
-        if (contextNames().size() == 0 && machineNames().size() == 0)
+        if (contextNames().size() == 0 && machineNames().size() == 0 && theoryNames().size() == 0)
         {
-            log.usageError("Nothing to do! No contexts or machines found in %s",  path);
+            log.info("No contexts, machines or theories found in %s\n",  path);
         }
 
         // Load the projct.info file, if it exists.
         loadProjectInfo(dir);
 
-        return "read "+contextNames().size()+" contexts and "+machineNames().size()+" machines";
+        return "read "+contextNames().size()+" contexts, "+machineNames().size()+" machines, "+theoryNames().size()+" theories";
     }
 
     private List<Pair<String,File>> eachFileEndingIn(File dir, String suffix)
@@ -250,6 +343,21 @@ public class Sys
             }
         }
         return result;
+    }
+
+    private void populateTheories(File dir) throws Exception
+    {
+        List<Pair<String,File>> files = eachFileEndingIn(dir, ".tuf");
+
+        for (Pair<String,File> p : files)
+        {
+            String name = p.left;
+            File file = p.right;
+            String dir_th = dir.getName();
+            Theory t = new Theory(dir_th, name, this, file);
+            addTheory(t);
+            log.debug("found theory "+name);
+        }
     }
 
     private void populateContexts(File dir) throws Exception
@@ -277,6 +385,15 @@ public class Sys
             Machine m = new Machine(name, this, file);
             addMachine(m);
             log.debug("found machine "+m.name());
+        }
+    }
+
+    private void loadTheories() throws Exception
+    {
+        for (int i = 0; i < theoryOrdering().size(); i++) // this way we can add element while in the loop to load all imported theories
+        {
+            Theory t = theorie_ordering_.get(i);
+            t.load();
         }
     }
 
@@ -318,6 +435,14 @@ public class Sys
         }
     }
 
+    private void parseTheoryFormulas()
+    {
+        for (Theory t : theoryOrdering())
+        {
+            t.parse();
+        }
+    }
+
     private void parseContextFormulas()
     {
         for (String name : contextNames())
@@ -356,6 +481,11 @@ public class Sys
 
     public void walkSystem(AllRenders ar, String pattern)
     {
+        for (Theory t : theoryOrdering())
+        {
+            ar.walkTheory(t, pattern);
+        }
+   
         for (Context c : contextOrdering())
         {
             ar.walkContext(c, pattern);
@@ -380,6 +510,14 @@ public class Sys
     {
         AllRenders ar = lookupRenders(RenderTarget.TERMINAL,
                                       canvas);
+
+        if (ss.showingTheories())
+        {
+            for (Theory th : theoryOrdering())
+            {
+                ar.walkTheory(th, pattern);
+            }
+        }
 
         if (ss.showingContexts())
         {
@@ -406,6 +544,7 @@ public class Sys
                               new RenderMachineSearch(),
                               new RenderEventSearch(),
                               new RenderFormulaSearch(null),
+                              new RenderTheorySearch(),
                               null);
     }
 
@@ -418,24 +557,35 @@ public class Sys
                                   new RenderMachineUnicode(),
                                   new RenderEventUnicode(),
                                   new RenderFormulaUnicode(canvas),
+                                  new RenderTheoryUnicode(),
                                   canvas);
         case TERMINAL:
             return new AllRenders(new RenderContextUnicode(),
                                      new RenderMachineUnicode(),
                                      new RenderEventUnicode(),
                                      new RenderFormulaUnicode(canvas),
+                                     new RenderTheoryUnicode(),
                                      canvas);
         case TEX:
            return new AllRenders(new RenderContextTeX(),
                                     new RenderMachineTeX(),
                                     new RenderEventTeX(),
                                     new RenderFormulaTeX(canvas),
+                                    new RenderTheoryTeX(),
                                     canvas);
         case HTMQ:
            return new AllRenders(new RenderContextHtmq(),
                                     new RenderMachineHtmq(),
                                     new RenderEventHtmq(),
                                     new RenderFormulaHtmq(canvas),
+                                    new RenderTheoryHtqm(),
+                                    canvas);
+        case WHY:
+            return new AllRenders(null,
+                                    null,
+                                    null,
+                                    new RenderFormulaWhy(canvas),
+                                    new RenderTheoryWhy(),
                                     canvas);
         }
         assert (false) : "No case for format: "+format;

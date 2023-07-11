@@ -18,11 +18,14 @@
 package com.viklauverk.eventbtools.core;
 
 import java.util.List;
+import java.text.Normalizer.Form;
 import java.util.LinkedList;
 
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.TerminalNode;
+
+import com.viklauverk.eventbtools.core.EvBFormulaParser.ExpressionContext;
 
 public class FormulaBuilder extends EvBFormulaBaseVisitor<Formula>
 {
@@ -111,6 +114,12 @@ public class FormulaBuilder extends EvBFormulaBaseVisitor<Formula>
     }
 
     @Override
+    public Formula visitAnySetSymbol(EvBFormulaParser.AnySetSymbolContext ctx)
+    {
+        return FormulaFactory.newAnySymbol(ctx.sym.getText(), visitOptionalMeta(ctx.meta()));
+    }
+
+    @Override
     public Formula visitPredicateSymbol(EvBFormulaParser.PredicateSymbolContext ctx)
     {
         return FormulaFactory.newPredicateSymbol(ctx.sym.getText(), visitOptionalMeta(ctx.meta()));
@@ -194,6 +203,77 @@ public class FormulaBuilder extends EvBFormulaBaseVisitor<Formula>
         return FormulaFactory.newFunctionApplication(this.visit(ctx.function), this.visit(ctx.inner), visitOptionalMeta(ctx.meta()));
     }
 
+    // AH
+    @Override
+    public Formula visitOperatorExpression(EvBFormulaParser.OperatorExpressionContext ctx)
+    {
+        Formula operator = FormulaFactory.newAnySymbol(ctx.operator.getText(), null);
+        List<Formula> elements = new LinkedList<>();
+        for (EvBFormulaParser.ExpressionContext sec : ctx.expression())
+        {
+            elements.add(this.visit(sec));
+        }
+        return FormulaFactory.newOperatorExpression(operator, elements);
+    }
+
+    // AH
+    @Override
+    public Formula visitOperatorPredicateExpression(EvBFormulaParser.OperatorPredicateExpressionContext ctx)
+    {
+        Formula operator = FormulaFactory.newAnySymbol(ctx.operator.getText(), null);
+        List<Formula> elements = new LinkedList<>();
+        for (EvBFormulaParser.ExpressionContext sec : ctx.expression())
+        {
+            elements.add(this.visit(sec));
+        }
+        return FormulaFactory.newOperatorExpression(operator, elements);
+    }
+
+    // AH
+    @Override
+    public Formula visitInfixOperatorExpression(EvBFormulaParser.InfixOperatorExpressionContext ctx)
+    {
+        Formula operator = FormulaFactory.newAnySymbol(ctx.operator.getText(), null);
+        Formula left = FormulaFactory.newAnySymbol(ctx.left.getText(), null);
+        Formula right = FormulaFactory.newAnySymbol(ctx.right.getText(), null);
+        return FormulaFactory.newInfixOperatorExpression(operator, left, right);
+    }
+
+    // AH
+    @Override
+    public Formula visitDatatype(EvBFormulaParser.DatatypeContext ctx)
+    {
+        Formula datatype = FormulaFactory.newAnySymbol(ctx.datatype.getText(), null);
+        List<Formula> elements = new LinkedList<>();
+        for (EvBFormulaParser.ExpressionContext sec : ctx.expression())
+        {
+            elements.add(this.visit(sec));
+        }
+        return FormulaFactory.newDatatype(datatype, elements);
+    }
+
+    // AH
+    @Override
+    public Formula visitConstructor(EvBFormulaParser.ConstructorContext ctx)
+    {
+        Formula constructor = FormulaFactory.newAnySymbol(ctx.constructor.getText(), null);
+        List<Formula> elements = new LinkedList<>();
+        for (EvBFormulaParser.ExpressionContext sec : ctx.expression())
+        {
+            elements.add(this.visit(sec));
+        }
+        return FormulaFactory.newConstructor(constructor, elements);
+    }
+
+    // AH
+    @Override
+    public Formula visitDestructor(EvBFormulaParser.DestructorContext ctx)
+    {
+        Formula destructor = FormulaFactory.newAnySymbol(ctx.destructor.getText(), null);
+        List<Formula> elements = new LinkedList<>();
+        return FormulaFactory.newDestructor(destructor, this.visit(ctx.dt));
+    }
+
     @Override
     public Formula visitExpressionTRUE(EvBFormulaParser.ExpressionTRUEContext ctx)
     {
@@ -204,6 +284,45 @@ public class FormulaBuilder extends EvBFormulaBaseVisitor<Formula>
     public Formula visitExpressionFALSE(EvBFormulaParser.ExpressionFALSEContext ctx)
     {
         return FormulaFactory.newConstantSymbol("FALSE", visitOptionalMeta(ctx.meta()));
+    }
+
+    @Override
+    public Formula visitSetVariable(EvBFormulaParser.SetVariableContext ctx)
+    {
+        if (ctx.PRIM() != null)
+        {
+            return FormulaFactory.newVariablePrimSymbol(ctx.variable.getText(), visitOptionalMeta(ctx.meta()));
+        }
+        else
+        {
+            return FormulaFactory.newVariableSymbol(ctx.variable.getText(), visitOptionalMeta(ctx.meta()));
+        }
+    }
+
+    @Override
+    public Formula visitNonFreeSetVariable(EvBFormulaParser.NonFreeSetVariableContext ctx)
+    {
+        return FormulaFactory.newVariableNonFreeSymbol(ctx.variable.getText(), visitOptionalMeta(ctx.meta()));
+    }
+
+    @Override
+    public Formula visitSetConstant(EvBFormulaParser.SetConstantContext ctx)
+    {
+        return FormulaFactory.newConstantSymbol(ctx.constant.getText(), visitOptionalMeta(ctx.meta()));
+    }
+
+    // AH
+    @Override
+    public Formula visitTypeParameterSymbol(EvBFormulaParser.TypeParameterSymbolContext ctx)
+    {
+        return FormulaFactory.newTypeParameterSymbol(ctx.sym.getText(), null);
+    }
+
+    // AH
+    @Override
+    public Formula visitTypedefSymbol(EvBFormulaParser.TypedefSymbolContext ctx)
+    {
+        return FormulaFactory.newTypedefSymbol(ctx.sym.getText(), null);
     }
 
     @Override
@@ -258,6 +377,14 @@ public class FormulaBuilder extends EvBFormulaBaseVisitor<Formula>
         return FormulaFactory.newLambda(this.visit(ctx.vars), this.visit(ctx.pred), this.visit(ctx.formula),
                                         visitOptionalMeta(ctx.meta()));
     }
+
+/* MaPa : Remove IRIT lambda
+    @Override
+    public Formula visitLambdaAbstractionSet(EvBFormulaParser.LambdaAbstractionSetContext ctx)
+    {
+        return FormulaFactory.newLambda(this.visit(ctx.vars), this.visit(ctx.pred), this.visit(ctx.formula),
+                                        visitOptionalMeta(ctx.meta()));
+    } */
 
     @Override
     public Formula visitSetComprehension(EvBFormulaParser.SetComprehensionContext ctx)

@@ -20,6 +20,7 @@ package com.viklauverk.eventbtools.core;
 import com.viklauverk.eventbtools.core.Formula;
 
 import java.util.List;
+import java.text.Normalizer.Form;
 import java.util.LinkedList;
 
 public class RenderFormulaUnicode extends RenderFormula
@@ -475,7 +476,19 @@ public class RenderFormulaUnicode extends RenderFormula
 
     @Override public Formula visit_SET_SYMBOL(Formula i)
     {
-        cnvs().set(Symbols.name(i.intData())); visitMeta(i); return i;
+        cnvs().set("set_"+Symbols.name(i.intData())); visitMeta(i); return i;
+    }
+
+    // AH
+    @Override public Formula visit_TYPE_PARAMETER_SYMBOL(Formula i)
+    {
+        cnvs().set("tp_"+Symbols.name(i.intData())); return i;
+    }
+
+    // AH
+    @Override public Formula visit_TYPEDEF_SYMBOL(Formula i)
+    {
+        cnvs().set("td_"+Symbols.name(i.intData())); return i;
     }
 
     @Override public Formula visit_CONSTANT_SYMBOL(Formula i)
@@ -617,6 +630,55 @@ public class RenderFormulaUnicode extends RenderFormula
     @Override public Formula visit_FUNC_INV_APP(Formula i)
     {
         visitLeft(i); visitMeta(i); cnvs().symbol("~("); visitRight(i); cnvs().symbol(")"); return i;
+    }
+
+    // AH
+    @Override public Formula visit_OPERATOR_EXPRESSION(Formula i)
+    {
+        visitChildNum(i, 0); 
+        if (i.numChildren() > 1)
+        {
+            cnvs().symbol("(");
+            visitChildNum(i, 1);
+            for (int j = 2; j < i.numChildren(); j++) {
+                cnvs().symbol(",");
+                visitChildNum(i, j);
+            } 
+            cnvs().symbol(")");
+        }
+        return i;
+    }
+
+    // AH
+    @Override public Formula visit_INFIX_OPERATOR_EXPRESSION(Formula i)
+    {
+        visitChildNum(i, 1);
+        cnvs().symbol(" ");
+        visitChildNum(i, 0);
+        cnvs().symbol(" ");
+        visitChildNum(i, 2);
+        return i;
+    }
+
+    // AH
+    @Override public Formula visit_DATATYPE(Formula i)
+    {
+        cnvs().append("dt_");
+        return visit_OPERATOR_EXPRESSION(i);
+    }
+
+    // AH
+    @Override public Formula visit_CONSTRUCTOR(Formula i)
+    {
+        cnvs().append("cst_");
+        return visit_OPERATOR_EXPRESSION(i);
+    }
+
+    // AH
+    @Override public Formula visit_DESTRUCTOR(Formula i)
+    {
+        cnvs().append("dst_");
+        return visit_OPERATOR_EXPRESSION(i);
     }
 
     @Override public Formula visit_META(Formula i)

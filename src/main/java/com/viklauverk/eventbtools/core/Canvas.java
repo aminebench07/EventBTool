@@ -53,6 +53,9 @@ public class Canvas
     private boolean math_active_ = false;
     private int num_aligns_ = 0;
 
+    // AH //TODO: didn't find out how to indent so I wrote it myself, it may already exist within the code
+    private int indentation_ = 0;
+
     public Canvas() {}
 
     public static String align_2col = "l,R";
@@ -396,6 +399,8 @@ public class Canvas
             return frameTeX(title, s, b);
         case HTMQ:
             return frameHTMQ(title, s, b);
+        case WHY:
+            return frameWHY(title, s, b);
         }
         return s;
     }
@@ -496,6 +501,11 @@ public class Canvas
     }
 
     String frameHTMQ(String title, String s, Box b)
+    {
+        return s;
+    }
+
+    String frameWHY(String title, String s, Box b)
     {
         return s;
     }
@@ -686,6 +696,57 @@ public class Canvas
         append("\n");
     }
 
+    public int indentSize()
+    {
+        switch (render_target_)
+        {
+        case PLAIN:
+            return 4;
+        case TERMINAL:
+            return 4;
+        case TEX:
+            return 0;
+        case HTMQ:
+            return 0;
+        case WHY:
+            return 2;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+        return -1;
+    }
+
+    public int getIndentation()
+    {
+        return indentation_;
+    }
+
+    /** Indents the lines created afterwards. */
+    public void startIndent()
+    {
+        indentation_ += indentSize();
+    }
+
+    /** Removes one indentation to the lines created afterwards. */
+    public void endIndent()
+    {
+        indentation_ -= indentSize();
+    }
+
+    /** Sets the indentation to 0 for the lines created afterwards. */
+    public void clearIndent()
+    {
+        indentation_ = 0;
+    }
+
+    /** Adds the right number of spaces to indent properly a line. */
+    private void indent()
+    {
+        for (int i = 0; i < indentation_; i++)
+        {
+            append(" ");
+        }
+    }
+
     public void startMath()
     {
         assert(math_active_ == false) : "Internal error: Expected math to be inactive when starting math mode, and it was already active!";
@@ -701,6 +762,8 @@ public class Canvas
             return;
         case HTMQ:
             //append(" '\\(' ");
+            return;
+        case WHY:
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -722,6 +785,8 @@ public class Canvas
         case HTMQ:
             //append(" '\\)' ");
             return;
+        case WHY:
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -738,6 +803,8 @@ public class Canvas
             append("\\GRD{");
             return;
         case HTMQ:
+            return;
+        case WHY:
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -756,6 +823,8 @@ public class Canvas
             return;
         case HTMQ:
             return;
+        case WHY:
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -772,6 +841,8 @@ public class Canvas
             append("\\WIT{");
             return;
         case HTMQ:
+            return;
+        case WHY:
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -790,6 +861,8 @@ public class Canvas
             return;
         case HTMQ:
             return;
+        case WHY:
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -807,6 +880,8 @@ public class Canvas
             return;
         case HTMQ:
             return;
+        case WHY:
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -823,6 +898,8 @@ public class Canvas
             append("}");
             return;
         case HTMQ:
+            return;
+        case WHY:
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -843,6 +920,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" hr ");
+            return;
+        case WHY:
+            append("\n");
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -869,6 +949,9 @@ public class Canvas
         case HTMQ:
             append(" br ");
             return;
+        case WHY:
+            append("\n");
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -887,6 +970,58 @@ public class Canvas
             append("\\LINE{");
             return;
         case HTMQ:
+            return;
+        case WHY:
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    public void startIndentedLine()
+    {
+        assert (line_active_ == false) : "Internal error: startLine expected no active line, but it was!";
+        dbgCnvs("[line]");
+        switch (render_target_)
+        {
+        case PLAIN:
+        case TERMINAL:
+            indent();
+            return;
+        case TEX:
+            append("\\LINE{");
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            indent();
+            startLine();
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    public void skipLine()
+    {
+        assert (line_active_ == false) : "Internal error: startLine expected no active line, but it was!";
+        dbgCnvs("[line]");
+        switch (render_target_)
+        {
+        case PLAIN:
+        case TERMINAL:
+            startLine();
+            append(" ");
+            endLine();
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            startLine();
+            append(" ");
+            endLine();            
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -914,6 +1049,9 @@ public class Canvas
         case HTMQ:
             append(" br \n");
             return;
+        case WHY:
+            append("\n");
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -940,6 +1078,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" br ");
+            return;
+        case WHY:
+            append("\n");
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -974,6 +1115,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=ID)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -993,6 +1137,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=KEYW)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(s);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1014,6 +1161,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=KEYWL)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1033,6 +1183,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=VARDEF)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(s);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1054,6 +1207,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=VAR)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1073,6 +1229,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=NONF)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(s);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1094,6 +1253,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=NUM)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1113,6 +1275,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=ANY)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(s);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1134,6 +1299,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=CON)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1146,13 +1314,17 @@ public class Canvas
             append(s);
             return;
         case TERMINAL:
-            append(colorize(Black, s));
+            append(colorize(Purple, s));
+            //append(colorize(Black, s));
             return;
         case TEX:
             append("\\PSET{"+Util.texSafe(s)+"}");
             return;
         case HTMQ:
             append(" span(class=PSET)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(s);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1174,6 +1346,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=CSET)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1193,6 +1368,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=PRED)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(s);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1214,6 +1392,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=EXPR)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1234,6 +1415,9 @@ public class Canvas
         case HTMQ:
             append(" "+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1253,6 +1437,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" a(id=\""+s+"\") ");
+            return;
+        case WHY:
+            append(s);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1278,8 +1465,25 @@ public class Canvas
         case HTMQ:
             append(" span(class=COM)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(Unicode.commentToWhy(s));
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    public void commentLine(String s)
+    {
+        startLine();
+        comment(s);
+        endLine();
+    }
+
+    public void commentIndentedLine(String s)
+    {
+        startIndentedLine();
+        comment(s);
+        endLine();
     }
 
     public void commentWithExtraVSpace(String s)
@@ -1301,6 +1505,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=COM)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(Unicode.commentToWhy(s));
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1325,6 +1532,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=ACOM)="+Util.quoteXMQ(s)+" ");
+            return;
+        case WHY:
+            append(Unicode.commentToWhy(s));
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1355,6 +1565,9 @@ public class Canvas
         case HTMQ:
             append(" span(class=LAB)="+Util.quoteXMQ(pre+s+post)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1376,6 +1589,60 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=LAB)="+Util.quoteXMQ("theorem")+" ");
+            return;
+        case WHY:
+            append("lemma ");
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+
+
+    /** Theorem definition, note that this starts and ends line on its own. */
+    public void theoremDef(String name)
+    {
+
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            startIndentedLine();
+            append("lemma thm_"+name+":");
+            endLine();
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    /** Theorem definition with comment, note that this starts and ends line on its own. */
+    public void theoremDef(String name, String comment)
+    {
+
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            commentIndentedLine(comment);
+            theoremDef(name);
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1399,6 +1666,261 @@ public class Canvas
         case HTMQ:
             append(" span(class=COM)="+Util.quoteXMQ(s)+" ");
             return;
+        case WHY:
+            append(s);
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** Axiom definition, note that this handles start and end of line. */
+    public void axiomDef(String name)
+    {
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            startIndentedLine();
+            append("axiom axm_"+name+":");
+            endLine();
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** Axiom definition with comment, note that this handles start and end of line. */
+    public void axiomDef(String name, String comment)
+    {
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            commentIndentedLine(comment);
+            axiomDef(name);
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** Operator definition, note that this requires start and end of line since it won't write the arguments */
+    public void operatorDef(String name)
+    {
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            append("let function "+name);
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** Operator predicate, note that this requires start and end of line since it won't write the arguments */
+    public void predicateDef(String name)
+    {
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            append("let predicate "+name);
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+
+    // AH
+    /** Axiomatic operator definition, note that this requires start and end of line since it won't write the arguments */
+    public void operatorAxmDef(String name)
+    {
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            append("val function "+name);
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** Axiomatic predicate definition, note that this requires start and end of line since it won't write the arguments */
+    public void predicateAxmDef(String name)
+    {
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            append("val predicate "+name);
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** This starts the line, what is left is to write the formula */
+    public void beginWDC()
+    {
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            startIndentedLine();
+            append("requires {");
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** This ends the line. */
+    public void endWDC()
+    {
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            append("}");
+            endLine();
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    public void beginOpDef()
+    {
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            startIndentedLine();
+            append("= ");
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    public void endOpDef()
+    {
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            endLine();
+            return;
+        }
+        assert (false) : "Unknown encoding "+render_target_;
+    }
+
+    // AH
+    /** Imports the theory which name is provided, this will start and end the line on its own. */
+    public void importTheory(String name)
+    {
+        if (name.equals("")) return;
+
+        switch (render_target_)
+        {
+        case PLAIN:
+            return;
+        case TERMINAL:
+            return;
+        case TEX:
+            return;
+        case HTMQ:
+            return;
+        case WHY:
+            startIndentedLine();
+            append("use Th_"+name);
+            endLine();
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1418,6 +1940,9 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=TYPE)="+Util.htmqSafe("<"+f.node().name()+" "));
+            return;
+        case WHY:
+            append(f.node().name());
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;
@@ -1439,6 +1964,8 @@ public class Canvas
         case HTMQ:
             append(" span(class=TYPE)=>");
             return;
+        case WHY:
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1459,6 +1986,8 @@ public class Canvas
         case HTMQ:
             append(" span(class=META)=«");
             return;
+        case WHY:
+            return;
         }
         assert (false) : "Unknown encoding "+render_target_;
     }
@@ -1478,6 +2007,8 @@ public class Canvas
             return;
         case HTMQ:
             append(" span(class=META)=»");
+            return;
+        case WHY:
             return;
         }
         assert (false) : "Unknown encoding "+render_target_;

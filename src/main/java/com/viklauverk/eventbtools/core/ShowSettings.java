@@ -27,6 +27,8 @@ public class ShowSettings
 
     boolean show_comments_ = false;
 
+    boolean show_theories_ = false;
+
     boolean show_contexts_ = false;
     boolean show_axioms_ = false;
 
@@ -48,6 +50,8 @@ public class ShowSettings
     {
         show_comments_ = true;
 
+        show_theories_ = true;
+        
         show_contexts_ = true;
         show_axioms_ = true;
 
@@ -61,6 +65,8 @@ public class ShowSettings
     {
         show_comments_ = false;
 
+        show_theories_ = false;
+
         show_contexts_ = false;
         show_axioms_ = false;
 
@@ -71,6 +77,7 @@ public class ShowSettings
     }
 
     public void showComments(boolean s) { show_comments_ = s; }
+    public void showTheories(boolean s) { show_theories_ = s; }
     public void showContexts(boolean s) { show_contexts_ = s; }
     public void showAxioms(boolean s) { show_axioms_ = s; if (s) show_contexts_ = true;}
     public void showMachines(boolean s) { show_machines_ = s; }
@@ -78,6 +85,7 @@ public class ShowSettings
     public void showEvents(boolean s) { show_events_ = s; }
 
     public boolean showingComments() { return show_comments_; }
+    public boolean showingTheories() { return show_theories_; }
     public boolean showingContexts() { return show_contexts_; }
     public boolean showingAxioms() { return show_axioms_; }
     public boolean showingMachines() { return show_machines_; }
@@ -101,6 +109,7 @@ public class ShowSettings
                 enable = false;
             }
             if (p.equals("com")) showComments(enable);
+            if (p.equals("thy")) showTheories(enable);
             if (p.equals("ctx")) showContexts(enable);
             if (p.equals("axm")) showAxioms(enable);
             if (p.equals("mch")) showMachines(enable);

@@ -224,6 +224,7 @@ class AlignmentBlock
             return s+"\\\\\n";
         case HTMQ:
             return " tr { "+s+" }\n";
+        case WHY: /* TODO */
         }
         return s;
     }
@@ -267,6 +268,7 @@ class AlignmentBlock
                 return " td(colspan="+colspan+") { "+s+" } ";
             }
             return " td { "+s+" } ";
+        case WHY: /* TODO */
         }
         return "ERROR "+s;
     }

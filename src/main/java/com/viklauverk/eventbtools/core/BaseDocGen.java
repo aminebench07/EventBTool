@@ -46,7 +46,7 @@ public abstract class BaseDocGen
         common_settings_ = cs;
         docgen_settings_ = ds;
         sys_ = sys;
-        default_format_ = df; // tex, hxmq, terminal, plain
+        default_format_ = df; // tex, hxmq, terminal, plain, why
     }
 
     public CommonSettings commonSettings()
@@ -97,6 +97,11 @@ public abstract class BaseDocGen
     {
         AllRenders ar = sys().lookupRenders(cnvs.renderTarget(),
                                             cnvs);
+
+        for (Theory th : sys().theoryOrdering())
+        {
+            ar.walkTheory(th, pattern);
+        }
 
         for (String ctxs : sys().contextNames())
         {

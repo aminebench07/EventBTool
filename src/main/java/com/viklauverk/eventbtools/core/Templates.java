@@ -548,6 +548,1054 @@ public static String TeXPackages =
 "%\\usepackage{blindtext} % Use this to debug latex.\n"+
 "%\\usepackage{showframe} % Use this to debug latex.\n"+
 "";
+public static String Why3Definitions=
+"(*\n"+
+" bpo2why_prelude.why: formalisation of B operators in Why3\n"+
+"\n"+
+" copyright 2011-2014 Claude Marché <Claude.Marche@inria.fr> -- INRIA/LRI/CNRS\n"+
+" copyright 2011-2014 Jean-Christophe Filliâtre\n"+
+"                         <Jean-Christophe.Filliatre@lri.fr> -- INRIA/LRI/CNRS\n"+
+" copyright 2011-2014 David Mentré <d.mentre@fr.merce.mee.com>\n"+
+"                                     -- Mitsubishi Electric R&D Centre Europe\n"+
+"\n"+
+" This file is free software: you can redistribute it and/or modify\n"+
+" it under the terms of the GNU Affero General Public License as published by\n"+
+" the Free Software Foundation, either version 3 of the License, or\n"+
+" (at your option) any later version.\n"+
+"\n"+
+" This file is distributed in the hope that it will be useful,\n"+
+" but WITHOUT ANY WARRANTY; without even the implied warranty of\n"+
+" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"+
+" GNU Affero General Public License for more details.\n"+
+"\n"+
+" You should have received a copy of the GNU Affero General Public License\n"+
+" along with this file.  If not, see <http://www.gnu.org/licenses/>.\n"+
+"*)\n"+
+"\n"+
+"\n"+
+"\n"+
+"(** {1 A Library for B Set Theory}\n"+
+"\n"+
+"This library provides a few Why3 theories that formalize the set\n"+
+"theory as it is defined in the B-book.\n"+
+"\n"+
+"Reference: {h <a href=\"http://hal.inria.fr/hal-00681781/en/\">Discharging\n"+
+"Proof Obligations from Atelier B using Multiple Automated Provers</a>}\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"(** {2 more lemmas on Why3's sets} *)\n"+
+"\n"+
+"theory MoreSets\n"+
+"\n"+
+"  use export set.Set\n"+
+"\n"+
+"(**)\n"+
+"meta rewrite lemma mem_singleton\n"+
+"\n"+
+"meta rewrite lemma add_remove\n"+
+"\n"+
+"meta rewrite lemma remove_add\n"+
+"\n"+
+"meta compute_max_steps 1_000_000\n"+
+"(**)\n"+
+"\n"+
+"\n"+
+"end\n"+
+"\n"+
+"(** {2 B_BOOL}\n"+
+"\n"+
+"B Method's BOOL set\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory B_BOOL\n"+
+"\n"+
+"  use export bool.Bool\n"+
+"\n"+
+"  use export MoreSets\n"+
+"\n"+
+"  function b_bool : set bool\n"+
+"\n"+
+"  axiom mem_b_bool: forall x:bool. mem x b_bool\n"+
+"\n"+
+"end\n"+
+"\n"+
+"(** {2 Interval}\n"+
+"\n"+
+"interval of integers, seen as sets\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Interval\n"+
+"\n"+
+"  use export int.Int\n"+
+"\n"+
+"  use export set.Set\n"+
+"\n"+
+"\n"+
+"  function string : set (set (int, int))\n"+
+"\n"+
+"  function integer : set int\n"+
+"\n"+
+"  axiom mem_integer: forall x:int.mem x integer\n"+
+"\n"+
+"  function natural : set int\n"+
+"\n"+
+"\n"+
+"  function bounded_int : set int\n"+
+"  \n"+
+"  let constant b_maxint32_value : int = 2147483647\n"+
+"  let constant b_minint32_value : int = (-2147483647)\n"+
+"\n"+
+"  axiom mem_natural:\n"+
+"    forall x:int. mem x natural <-> x >= 0\n"+
+"\n"+
+"  function natural1 : set int\n"+
+"\n"+
+"  axiom mem_natural1:\n"+
+"    forall x:int. mem x natural1 <-> x > 0\n"+
+"\n"+
+"  function nat : set int\n"+
+"\n"+
+"  axiom mem_nat:\n"+
+"    forall x:int. mem x nat <-> (0 <= x <= b_maxint32_value)\n"+
+"\n"+
+"  function nat1 : set int\n"+
+"\n"+
+"  axiom mem_nat1:\n"+
+"    forall x:int. mem x nat1 <-> (1 <= x <= b_maxint32_value)\n"+
+"\n"+
+"  axiom mem_bounded_int:\n"+
+"    forall x:int. mem x bounded_int <-> (b_maxint32_value <= x <= b_maxint32_value)\n"+
+"\n"+
+"  function mk int int : set int\n"+
+"\n"+
+"  axiom mem_interval:\n"+
+"    forall x a b : int [mem x (mk a b)].\n"+
+"      mem x (mk a b) <-> a <= x <= b\n"+
+"\n"+
+"  lemma interval_empty :\n"+
+"     forall a b:int. a > b -> mk a b = empty\n"+
+"\n"+
+"  lemma interval_add :\n"+
+"     forall a b:int. a <= b -> (mk a b) = add b (mk a (b-1))\n"+
+"\n"+
+"end\n"+
+"\n"+
+"(** {2 Power set}\n"+
+"\n"+
+"    the power set of some set S, i.e the set of subsets of S\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"\n"+
+"theory PowerSet\n"+
+"\n"+
+"  use export set.Set\n"+
+"\n"+
+"  function power (set 'a) : set (set 'a)\n"+
+"\n"+
+"  axiom mem_power : forall x y:set 'a [mem x (power y)].\n"+
+"      mem x (power y) <-> subset x y\n"+
+"\n"+
+"  function non_empty_power (set 'a) : set (set 'a)\n"+
+"\n"+
+"  axiom mem_non_empty_power : forall x y:set 'a [mem x (non_empty_power y)].\n"+
+"      mem x (non_empty_power y) <-> subset x y /\\ not x = empty\n"+
+"\n"+
+"end\n"+
+"\n"+
+"(** {2 Relations}\n"+
+"\n"+
+"Relations between two sets\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Relation\n"+
+"\n"+
+"  use export set.Set\n"+
+"\n"+
+"  type rel 'a 'b = set ('a , 'b)\n"+
+"\n"+
+"  function relation (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_relation:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (relation s t) <->\n"+
+"       (forall x:'a, y:'b. mem (x,y) f -> mem x s /\\ mem y t)\n"+
+"\n"+
+"end\n"+
+"\n"+
+"(** {2 Composition}\n"+
+"\n"+
+"Composition of relations\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Composition\n"+
+"\n"+
+"  use Relation\n"+
+"\n"+
+"  function semicolon (rel 'a 'b) (rel 'b 'c) : (rel 'a 'c)\n"+
+"\n"+
+"  axiom semicolon_def:\n"+
+"    forall x:'a, z:'c, p:rel 'a 'b, q:rel 'b 'c.\n"+
+"    mem (x,z) (semicolon p q) <->\n"+
+"      exists y:'b. mem (x,y) p /\\ mem (y,z) q\n"+
+"\n"+
+"  function direct_product (rel 'a 'b) (rel 'a 'c) : set ('a, ('b, 'c))\n"+
+"\n"+
+"  axiom direct_product_def:\n"+
+"    forall e:('t,('u,'v)), r1:rel 't 'u, r2:rel 't 'v\n"+
+"       [mem e (direct_product r1 r2)].\n"+
+"    mem e (direct_product r1 r2) <->\n"+
+"      exists x:'t, y:'u, z:'v.\n"+
+"        (x,(y,z))=e /\\ mem (x,y) r1 /\\ mem (x, z) r2\n"+
+"\n"+
+"(* another approach, don't work better\n"+
+"  axiom direct_product_def:\n"+
+"    forall e:('t,('u,'v)), x:'t, y:'u, z:'v, r1:rel 't 'u, r2:rel 't 'v.\n"+
+"    (mem e (direct_product r1 r2) /\\ e=(x,(y,z)) ) <->\n"+
+"         mem (x,y) r1 /\\ mem (x, z) r2\n"+
+"*)\n"+
+"\n"+
+"  function parallel_product (rel 'a 'b) (rel 'c 'd) : set (('a, 'c), ('b, 'd))\n"+
+"\n"+
+"  axiom parallel_product_def:\n"+
+"    forall e:(('t,'v),('u,'w)), r1:rel 't 'u, r2:rel 'v 'w.\n"+
+"      mem e (parallel_product r1 r2) <->\n"+
+"        exists x:'t, y:'v, z:'u, a:'w.\n"+
+"          ((x,y),(z,a))=e /\\ mem (x,z) r1 /\\ mem (y,a) r2\n"+
+"end\n"+
+"\n"+
+"\n"+
+"(** {2 Domain, Range, Inverse}\n"+
+"\n"+
+"Domain, Range and inverse of a relation\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory InverseDomRan\n"+
+"\n"+
+"  use export Relation\n"+
+"\n"+
+"  function inverse (rel 'a 'b) : rel 'b 'a\n"+
+"\n"+
+"  axiom Inverse_def:\n"+
+"    forall r : rel 'a 'b. forall x : 'a, y : 'b.\n"+
+"      mem (y,x) (inverse r) <-> mem (x,y) r\n"+
+"\n"+
+"  function dom (rel 'a 'b) : set 'a\n"+
+"\n"+
+"  axiom dom_def:\n"+
+"    forall r : rel 'a 'b. forall x : 'a.\n"+
+"      mem x (dom r) <-> exists y : 'b. mem (x,y) r\n"+
+"\n"+
+"  function ran (rel 'a 'b) : set 'b\n"+
+"\n"+
+"  axiom ran_def:\n"+
+"    forall r : rel 'a 'b. forall y : 'b.\n"+
+"      mem y (ran r) <-> exists x : 'a. mem (x,y) r\n"+
+"\n"+
+"  lemma dom_empty:\n"+
+"    dom (empty : rel 'a 'b) = (empty : set 'a)\n"+
+"\n"+
+"  lemma dom_add:\n"+
+"    forall f:rel 'a 'b, x:'a, y:'b.\n"+
+"      dom (add (x,y) f) = add x (dom f)\n"+
+"\n"+
+"  lemma dom_singleton:\n"+
+"    forall x:'a, y:'b.\n"+
+"      dom (singleton (x,y)) = singleton x\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"(** {2 Image}\n"+
+"\n"+
+"Image by a relation\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Image\n"+
+"\n"+
+"  use export Relation\n"+
+"\n"+
+"  function image (r : rel 'a 'b) (dom : set 'a) : set 'b\n"+
+"\n"+
+"  axiom mem_image:\n"+
+"    forall r : rel 'a 'b, dom : set 'a, y : 'b [mem y (image r dom)].\n"+
+"    mem y (image r dom) <-> exists x: 'a. mem x dom /\\ mem (x,y) r\n"+
+"\n"+
+"  lemma image_union:\n"+
+"    forall r : rel 'a 'b, s t: set 'a.\n"+
+"    image r (union s t) = union (image r s) (image r t)\n"+
+"\n"+
+"  lemma image_add:\n"+
+"    forall r : rel 'a 'b, dom : set 'a, x:'a.\n"+
+"    image r (add x dom) = union (image r (singleton x))\n"+
+"                                        (image r dom)\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"(** {2 Functions}\n"+
+"\n"+
+"Partial functions as relations\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Function\n"+
+"\n"+
+"  use export Relation\n"+
+"  use export Image\n"+
+"\n"+
+"  (** operator  A +-> B : set of partial functions from A to B,\n"+
+"     seen as a relation\n"+
+"  *)\n"+
+"\n"+
+"  function (+->) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_function:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s +-> t) <->\n"+
+"       (forall x:'a, y:'b. mem (x,y) f -> mem x s /\\ mem y t)\n"+
+"       /\\\n"+
+"       (forall x:'a, y1 y2:'b. mem (x,y1) f /\\ mem (x,y2) f -> y1=y2)\n"+
+"\n"+
+"  lemma domain_function:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b, x:'a, y:'b.\n"+
+"      mem f (s +-> t) -> mem (x,y) f -> mem x s\n"+
+"\n"+
+"  lemma range_function:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b, x:'a, y:'b.\n"+
+"      mem f (s +-> t) -> mem (x,y) f -> mem y t\n"+
+"\n"+
+"  lemma function_extend_range:\n"+
+"     forall f:rel 'a 'b, s:set 'a, t u:set 'b.\n"+
+"      subset t u ->\n"+
+"      mem f (s +-> t) -> mem f (s +-> u)\n"+
+"\n"+
+"  lemma function_reduce_range:\n"+
+"     forall f:rel 'a 'b, s:set 'a, t u:set 'b.\n"+
+"      subset u t ->\n"+
+"      mem f (s +-> t) ->\n"+
+"      (forall x:'a, y:'b. mem (x,y) f -> mem y u) ->\n"+
+"      mem f (s +-> u)\n"+
+"\n"+
+"  use InverseDomRan\n"+
+"\n"+
+"  function (-->) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_total_functions:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s --> t) <-> mem f (s +-> t) /\\ dom f = s\n"+
+"\n"+
+"  lemma total_function_is_function:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b [mem f (s --> t)].\n"+
+"      mem f (s --> t) -> mem f (s +-> t)\n"+
+"\n"+
+"  lemma singleton_is_partial_function :\n"+
+"   forall s:set 'a, t:set 'b, x:'a, y:'b.\n"+
+"   mem x s /\\ mem y t -> mem (singleton (x,y)) (s +-> t)\n"+
+"\n"+
+"  lemma singleton_is_function:\n"+
+"    forall x:'a, y:'b [singleton (x,y)].\n"+
+"      mem (singleton (x,y)) ((singleton x) --> (singleton y))\n"+
+"\n"+
+"  function apply (rel 'a 'b) 'a : 'b\n"+
+"\n"+
+"  axiom apply_def0:\n"+
+"     forall f:rel 'a 'b, s:set 'a, t:set 'b, a:'a.\n"+
+"       mem f (s +-> t) /\\ mem a (dom f) -> mem (a, apply f a) f\n"+
+"\n"+
+"  axiom apply_def1:\n"+
+"     forall f:rel 'a 'b, s:set 'a, t:set 'b, a:'a.\n"+
+"       mem f (s --> t) /\\ mem a s -> mem (a, apply f a) f\n"+
+"\n"+
+"  axiom apply_def2:\n"+
+"     forall f:rel 'a 'b, s:set 'a, t:set 'b, a:'a, b:'b.\n"+
+"       mem f (s +-> t) /\\ mem (a,b) f -> apply f a = b\n"+
+"\n"+
+"  lemma apply_singleton :\n"+
+"    forall x:'a, y:'b.\n"+
+"      apply (singleton (x,y)) x = y\n"+
+"\n"+
+"  lemma apply_range :\n"+
+"    forall x:'a, f:rel 'a 'b, s:set 'a, t:set 'b [mem f (s +-> t),apply f x].\n"+
+"      mem f (s +-> t) /\\ mem x (dom f) -> mem (apply f x) t\n"+
+"\n"+
+"  use Composition\n"+
+"\n"+
+"  lemma semicolon_dom:\n"+
+"    forall f:rel 'a 'b, g:rel 'b 'c. subset (dom (semicolon f g)) (dom f)\n"+
+"\n"+
+"  lemma semicolon_is_function:\n"+
+"    forall f:rel 'a 'b, g:rel 'b 'c, s:set 'a, t:set 'b, u:set 'c.\n"+
+"    mem f (s +-> t) /\\ mem g (t +-> u) -> mem (semicolon f g) (s +-> u)\n"+
+"\n"+
+"  lemma apply_compose :\n"+
+"   forall x:'a, f:rel 'a 'b, g:rel 'b 'c, s:set 'a, t:set 'b, u:set 'c.\n"+
+"     mem f (s +-> t) /\\  mem g (t +-> u) /\\\n"+
+"     mem x (dom f) /\\ mem (apply f x) (dom g) ->\n"+
+"     apply (semicolon f g) x = apply g (apply f x)\n"+
+"\n"+
+"  (* operators \">+>\" (partial injection) and \">->\" (total injection) *)\n"+
+"\n"+
+"  function (>+>) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_partial_injection:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s >+> t) <-> mem f (s +-> t) /\\ mem (inverse f) (t +-> s)\n"+
+"\n"+
+"  function (>->) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_total_injection:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s >-> t) <-> mem f (s >+> t) /\\ mem f (s --> t)\n"+
+"\n"+
+"  lemma mem_total_injection_alt:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s >-> t) <-> mem f (s --> t) /\\ mem (inverse f) (t +-> s)\n"+
+"\n"+
+"  lemma injection:\n"+
+"     forall f:rel 'a 'b, s:set 'a, t:set 'b. forall x y:'a.\n"+
+"       mem f (s >-> t) -> mem x s -> mem y s ->\n"+
+"       (apply f x) = (apply f y) -> x=y\n"+
+"\n"+
+"  (* operators \"+->>\" (partial surjection) and \"-->>\" (total surjection) *)\n"+
+"\n"+
+"  function (+->>) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_partial_surjection:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s +->> t) <-> mem f (s +-> t) /\\ ran f = t\n"+
+"\n"+
+"  function (-->>) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_total_surjection:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s -->> t) <-> mem f (s +->> t) /\\ mem f (s --> t)\n"+
+"\n"+
+"  (* operators \">+>>\" (partial bijection) and \">->>\" (total bijection) *)\n"+
+"\n"+
+"  function (>+>>) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_partial_bijection:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s >+>> t) <-> mem f (s >+> t) /\\ mem f (s +->> t)\n"+
+"\n"+
+"  function (>->>) (s:set 'a) (t:set 'b) : set (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_total_bijection:\n"+
+"    forall f:rel 'a 'b, s:set 'a, t:set 'b.\n"+
+"      mem f (s >->> t) <-> mem f (s >-> t) /\\ mem f (s -->> t)\n"+
+"\n"+
+"  function to_relation (rel 'a (set 'b)) : (rel 'a 'b)\n"+
+"\n"+
+"  axiom mem_to_relation:\n"+
+"	 forall f:(rel 'a (set 'b)), x: 'a, y: 'b.\n"+
+"		mem (x,y) (to_relation f) <-> mem x (dom f) /\\ mem y (apply f x)\n"+
+"\n"+
+"  function to_function (rel 'a 'b) : (rel 'a (set 'b))\n"+
+"\n"+
+"  axiom mem_to_function:\n"+
+"	 forall f:(rel 'a 'b), x: 'a, y: (set 'b).\n"+
+"		mem (x,y) (to_function f) <-> mem x (dom f) /\\ y == (image f (singleton x))\n"+
+"\n"+
+"\n"+
+"end\n"+
+"\n"+
+"(** {2 restriction}\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Restriction\n"+
+"\n"+
+"  use export Relation\n"+
+"  use InverseDomRan\n"+
+"\n"+
+"  (* FIXME: the subset hypothesis for f comes from the B-Book.\n"+
+"     f <| r = id(f);r which requires f \\subseteq U and r: U <-> V\n"+
+"   *)\n"+
+"\n"+
+"  function (|>) (rel 'a 'b) (set 'b) : rel 'a 'b\n"+
+"  function range_restriction (r: rel 'a 'b) (f: set 'b) : rel 'a 'b = r |> f\n"+
+"\n"+
+"  axiom range_restriction_def:\n"+
+"     forall  r:rel 'e1 'e2, f:set 'e2. subset f (ran r) ->\n"+
+"        forall x:'e1, y:'e2.\n"+
+"           mem (x, y) (r |> f) <-> mem (x, y) r /\\ mem y f\n"+
+"\n"+
+"  function (|>>) (rel 'a 'b) (set 'b) : rel 'a 'b\n"+
+"  function range_substraction (r: rel 'a 'b) (f: set 'b) : rel 'a 'b = r |>> f\n"+
+"\n"+
+"  axiom range_substraction_def:\n"+
+"     forall  r:rel 'e1 'e2, f:set 'e2. subset f (ran r) ->\n"+
+"        forall x:'e1, y:'e2.\n"+
+"           mem (x, y) (r |>> f) <-> mem (x, y) r /\\ not (mem y f)\n"+
+"\n"+
+"\n"+
+"  function (<|) (set 'a) (rel 'a 'b) : rel 'a 'b\n"+
+"  function domain_restriction (f: set 'a) (r: rel 'a 'b) : rel 'a 'b = f <| r\n"+
+"\n"+
+"  axiom domain_restriction_def:\n"+
+"     forall r:rel 'e1 'e2, f:set 'e1. subset f (dom r) ->\n"+
+"        forall x:'e1, y:'e2.\n"+
+"          mem (x, y) (f <| r) <-> mem (x, y) r /\\ mem x f\n"+
+"\n"+
+"\n"+
+"  function (<<|) (set 'a) (rel 'a 'b) : rel 'a 'b\n"+
+"  function domain_substraction (f: set 'a) (r: rel 'a 'b) : rel 'a 'b = f <<| r\n"+
+"\n"+
+"  axiom domain_substraction_def:\n"+
+"     forall r:rel 'e1 'e2, f:set 'e1. subset f (dom r) ->\n"+
+"        forall x:'e1, y:'e2.\n"+
+"           mem (x, y) (f <<| r) <-> mem (x, y) r /\\ not (mem x f)\n"+
+"\n"+
+"end\n"+
+"\n"+
+"(** {2 overriding}\n"+
+"\n"+
+"operator <+\n"+
+"\n"+
+"Bbook: Section 2.4.2\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Overriding\n"+
+"\n"+
+"use Relation\n"+
+"use InverseDomRan\n"+
+"\n"+
+"function (<+) (rel 'a 'b) (rel 'a 'b) : (rel 'a 'b)\n"+
+"\n"+
+"axiom overriding_def:\n"+
+"  forall x:'a, y:'b, q r : rel 'a 'b.\n"+
+"    mem (x,y) (q <+ r) <->\n"+
+"      (if mem x (dom r) then mem (x,y) r else mem (x,y) q)\n"+
+"\n"+
+"use Function\n"+
+"\n"+
+"lemma function_overriding :\n"+
+"   forall s:set 'a, t:set 'b, f g:rel 'a 'b.\n"+
+"   mem f (s +-> t) /\\ mem g (s +-> t) ->\n"+
+"   mem (f <+ g) (s +-> t)\n"+
+"\n"+
+"lemma dom_overriding :\n"+
+"   forall f g:rel 'a 'b [dom (f <+ g)].\n"+
+"     dom (f <+ g) = union (dom f) (dom g)\n"+
+"\n"+
+"lemma apply_overriding_1 :\n"+
+"   forall s:set 'a, t:set 'b, f g:rel 'a 'b, x:'a\n"+
+"      [mem f (s +-> t), mem g (s +-> t), apply (f <+ g) x].\n"+
+"   mem f (s +-> t) /\\ mem g (s +-> t) ->\n"+
+"   mem x (dom g) -> apply (f <+ g) x = apply g x\n"+
+"\n"+
+"lemma apply_overriding_2 :\n"+
+"   forall s:set 'a, t:set 'b, f g:rel 'a 'b, x:'a\n"+
+"   [mem f (s +-> t), apply (f <+ g) x | mem g (s +-> t), apply (f <+ g) x].\n"+
+"   mem f (s +-> t) /\\ mem g (s +-> t) ->\n"+
+"   not (mem x (dom g)) -> mem x (dom f) -> apply (f <+ g) x = apply f x\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"\n"+
+"(** {2 Identity}\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"theory Identity\n"+
+"\n"+
+"  use export Function\n"+
+"\n"+
+"  function id (set 'a) : rel 'a 'a\n"+
+"\n"+
+"  axiom id_def: forall x y:'a, s:set 'a.\n"+
+"    mem (x,y) (id s) <-> mem x s /\\ x=y\n"+
+"\n"+
+"  use InverseDomRan\n"+
+"\n"+
+"  lemma id_dom: forall s:set 'a. dom (id s) = s\n"+
+"\n"+
+"  lemma id_ran: forall s:set 'a. ran (id s) = s\n"+
+"\n"+
+"  lemma id_fun: forall s:set 'a. mem (id s) (s +-> s)\n"+
+"\n"+
+"  lemma id_total_fun: forall s:set 'a. mem (id s) (s --> s)\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"\n"+
+"(** {2 Sequences}\n"+
+"\n"+
+"    Finite sequences as total functions on domain 1..n\n"+
+"\n"+
+"*)\n"+
+"\n"+
+"\n"+
+"theory Sequence\n"+
+"\n"+
+"  use Function\n"+
+"  use Interval\n"+
+"  use Identity\n"+
+"\n"+
+"  (* a sequence of length n is any total function on domain 1..n *)\n"+
+"  function seq_length (n:int) (s : set 'a) : set (rel int 'a) =\n"+
+"    (mk 1 n) --> s\n"+
+"\n"+
+"  lemma length_uniq : forall n1 n2:int, s1 s2:set 'a, r: rel int 'a.\n"+
+"     n1 >= 0 /\\ mem r (seq_length n1 s1) ->\n"+
+"     n2 >= 0 /\\ mem r (seq_length n2 s2) -> n1 = n2\n"+
+"\n"+
+"  function size (rel int 'a) : int\n"+
+"\n"+
+"  axiom size_def : forall n:int, s:set 'a, r: rel int 'a.\n"+
+"     n >= 0 /\\ mem r (seq_length n s) -> size r = n\n"+
+"\n"+
+"  (* not realizable\n"+
+"  axiom size_inversion : forall r: rel int 'a.\n"+
+"     size r >= 0 -> exists s : set 'a. mem r (seq_length (size r) s)\n"+
+"  *)\n"+
+"\n"+
+"  function seq (set 'a) : set (rel int 'a)\n"+
+"\n"+
+"  axiom seq_def : forall s:set 'a, r:rel int 'a.\n"+
+"     mem r (seq s) <->\n"+
+"        size r >= 0 /\\ mem r (seq_length (size r) s)\n"+
+"\n"+
+"  lemma seq_as_total_function : forall s:set 'a, r:rel int 'a.\n"+
+"     mem r (seq s) -> mem r ((mk 1 (size r)) --> s)\n"+
+"\n"+
+"  function seq1 (set 'a) : set (rel int 'a)\n"+
+"\n"+
+"  axiom seq1_def: forall s: set 'a, r: rel int 'a.\n"+
+"    mem r (seq1 s) <-> size r > 0 /\\ mem r (seq s)\n"+
+"  (* FIXME add seq1 axioms *)\n"+
+"\n"+
+"  (** B-book page 734 *)\n"+
+"  function iseq (set 'a) : set (rel int 'a)\n"+
+"\n"+
+"  (* FIXME add iseq axioms *)\n"+
+"\n"+
+"  function iseq1 (set 'a) : set (rel int 'a)\n"+
+"\n"+
+"  (* FIXME add iseq1 axioms *)\n"+
+"\n"+
+"  function perm (set 'a) : set (rel int 'a)\n"+
+"\n"+
+"  (* FIXME add perm axioms *)\n"+
+"\n"+
+"  use Restriction\n"+
+"  \n"+
+"   function (/|) (rel int 'a) int : rel int 'a\n"+
+"   axiom head_restriction_def : forall s: rel int 'a, n: int.\n"+
+"     mem n (Interval.mk 0 (size s)) ->\n"+
+"       forall i: int, x: 'a.\n"+
+"         mem (i, x) (s /| n) <-> mem (i, x) ((Interval.mk 1 n) <| s)\n"+
+"\n"+
+"   function (|/) (rel int 'a) int : rel int 'a\n"+
+"   axiom tail_restriction_def : forall s: rel int 'a, n: int.\n"+
+"     mem n (Interval.mk 0 (size s)) ->\n"+
+"       forall i: int, x: 'a.\n"+
+"         mem (i, x) (s |/ n) <-> mem (i + n, x) s\n"+
+"\n"+
+"   goal Test1:\n"+
+"      mem (id (mk 1 21)) (seq_length 21 (mk 1 21))\n"+
+"\n"+
+"   goal ValuesLemmas_2:\n"+
+"      mem (id (mk 1 21)) (seq (mk 1 21))\n"+
+"\n"+
+"   goal ValuesLemmas_8: (* proven only by z3 *)\n"+
+"      size (id (mk 1 21)) = 21\n"+
+"\n"+
+"   goal Test_wrong_size:\n"+
+"      not(size (id (mk 1 21)) = 22)\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"\n"+
+"theory BList\n"+
+"\n"+
+"  use Function\n"+
+"\n"+
+"  (* FIXME add insert_in_front, insert_at_tail, tail, last, first,\n"+
+"     front, concatenation, conc axioms *)\n"+
+"\n"+
+"  function insert_in_front 'a (rel int 'a) : rel int 'a\n"+
+"\n"+
+"  function insert_at_tail (rel int 'a) 'a : rel int 'a\n"+
+"\n"+
+"  function tail (rel int 'a) : rel int 'a\n"+
+"\n"+
+"  function last (rel int 'a) : 'a\n"+
+"\n"+
+"  function first (rel int 'a) : 'a\n"+
+"\n"+
+"  function front (rel int 'a) : rel int 'a\n"+
+"\n"+
+"  function concatenation (rel int 'a) (rel int 'a) : rel int 'a\n"+
+"\n"+
+"  function rev (rel int 'a) : rel int 'a\n"+
+"\n"+
+"  function conc (rel int (rel int 'a)) : rel int 'a\n"+
+"\n"+
+"  function restriction_tail (rel int 'a) int : rel int 'a\n"+
+"\n"+
+"  function restriction_head (rel int 'a) int : rel int 'a\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"\n"+
+"\n"+
+"theory IsFinite\n"+
+"\n"+
+"   use int.Int\n"+
+"   use set.Set\n"+
+"\n"+
+"   (* (is_finite_subset s1 s2 c) is true when s1 is a finite subset of\n"+
+"      s2 of card c *)\n"+
+"   inductive is_finite_subset (s1:set 'a) (s2:set 'a) (c:int) =\n"+
+"     | Empty: forall s:set 'a. is_finite_subset empty s 0\n"+
+"     | Add_mem: forall x:'a, s1 s2:set 'a, c:int.\n"+
+"         is_finite_subset s1 s2 c -> mem x s2 -> mem x s1 ->\n"+
+"         is_finite_subset (add x s1) s2 c\n"+
+"     | Add_notmem: forall x:'a, s1 s2:set 'a, c:int.\n"+
+"         is_finite_subset s1 s2 c -> mem x s2 -> not mem x s1 ->\n"+
+"         is_finite_subset (add x s1) s2 (c+1)\n"+
+"\n"+
+"  use Interval\n"+
+"\n"+
+"  lemma finite_interval :\n"+
+"     forall a b:int.\n"+
+"       a <= b ->\n"+
+"         is_finite_subset (Interval.mk a b) Interval.integer (b-a+1)\n"+
+"\n"+
+"  lemma finite_interval_empty :\n"+
+"     forall a b:int.\n"+
+"       a > b ->\n"+
+"         is_finite_subset (Interval.mk a b) Interval.integer 0\n"+
+"\n"+
+"  (* B operator \"FIN\" *)\n"+
+"  function finite_subsets (s:set 'a) : set (set 'a)\n"+
+"\n"+
+"  axiom finite_subsets_def :\n"+
+"    forall s x: set 'a.\n"+
+"      mem x (finite_subsets s) <-> exists c:int. is_finite_subset x s c\n"+
+"\n"+
+"  lemma finite_Empty :\n"+
+"     forall s: set 'a. mem empty (finite_subsets s)\n"+
+"\n"+
+"  lemma finite_Add:\n"+
+"     forall x:'a, s1 s2:set 'a.\n"+
+"         mem s1 (finite_subsets s2) ->\n"+
+"         mem x s2 -> mem (add x s1) (finite_subsets s2)\n"+
+"\n"+
+"  lemma finite_Union:\n"+
+"     forall s1 s2 s3:set 'a.\n"+
+"         mem s1 (finite_subsets s3) -> mem s2 (finite_subsets s3)\n"+
+"           -> mem (union s1 s2) (finite_subsets s3)\n"+
+"\n"+
+"  lemma finite_inversion:\n"+
+"     forall s1 s2:set 'a. mem s1 (finite_subsets s2) ->\n"+
+"        s1 = empty \\/\n"+
+"        exists x:'a, s3:set 'a.\n"+
+"          s1 = add x s3 /\\ mem s3 (finite_subsets s2)\n"+
+"\n"+
+"  (* B operator \"FIN1\" *)\n"+
+"  function non_empty_finite_subsets (s:set 'a) : set (set 'a)\n"+
+"\n"+
+"  axiom non_empty_finite_subsets_def :\n"+
+"    forall s x: set 'a.\n"+
+"      mem x (non_empty_finite_subsets s) <-> exists c:int. is_finite_subset x s c /\\ not x = empty\n"+
+"\n"+
+"  (* operator \"card\" *)\n"+
+"\n"+
+"  lemma card_non_neg :\n"+
+"    forall s x: set 'a, c:int. is_finite_subset x s c -> c >= 0\n"+
+"\n"+
+"  lemma card_unique :\n"+
+"    forall s x: set 'a, c1 c2:int.\n"+
+"      is_finite_subset x s c1 -> is_finite_subset x s c2 -> c1 = c2\n"+
+"\n"+
+"  function card (s:set 'a) : int\n"+
+"\n"+
+"  axiom card_def :\n"+
+"    forall s x: set 'a, c:int. is_finite_subset x s c -> card x = c\n"+
+"\n"+
+"  lemma card_Empty : card (empty : set 'a) = 0\n"+
+"\n"+
+"  lemma card_Add_not_mem : forall x:'a, s1 s2:set 'a\n"+
+"    [mem s1 (finite_subsets s2), card (add x s1)].\n"+
+"     mem s1 (finite_subsets s2) -> not(mem x s1)\n"+
+"       -> card (add x s1) = card s1 + 1\n"+
+"\n"+
+"  lemma card_Add_mem : forall x:'a, s1 s2:set 'a\n"+
+"    [mem s1 (finite_subsets s2), card (add x s1)].\n"+
+"    mem s1 (finite_subsets s2) -> mem x s1\n"+
+"       -> card (add x s1) = card s1\n"+
+"\n"+
+"  lemma card_Union : forall s1 s2 s3: set 'a\n"+
+"    [mem s1 (finite_subsets s3), mem s2 (finite_subsets s3),\n"+
+"     card (union s1 s2)].\n"+
+"    mem s1 (finite_subsets s3) -> mem s2 (finite_subsets s3) ->\n"+
+"    is_empty (inter s1 s2) ->\n"+
+"      card (union s1 s2) = card s1 + card s2\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"\n"+
+"theory PowerRelation\n"+
+"\n"+
+"  use export Relation\n"+
+"  use export PowerSet\n"+
+"  use Function\n"+
+"\n"+
+"  function times (set 'a) (set 'b) : rel 'a 'b\n"+
+"\n"+
+"  axiom times_def:\n"+
+"    forall a : set 'a, b : set 'b, x : 'a, y : 'b [mem (x,y) (times a b)].\n"+
+"    mem (x,y) (times a b) <-> mem x a /\\ mem y b\n"+
+"\n"+
+"  axiom monotonicity_62a:\n"+
+"    forall u s:set 'a, v t:set 'b.\n"+
+"      subset u s /\\ subset v t -> subset (times u v) (times s t)\n"+
+"\n"+
+"  axiom subset_times_function:\n"+
+"    forall x:'b, s:set 'a, t:set 'b.\n"+
+"      mem x t -> mem (times s (singleton x)) (s --> t)\n"+
+"\n"+
+"  (* relations u v: Set of relations between sets u /\\ v *)\n"+
+"  function relations (u: set 'a) (v: set 'b) : set (rel 'a 'b) =\n"+
+"    power(times u v)\n"+
+"\n"+
+"  (* following lemmas are needed to type relations *)\n"+
+"  lemma break_mem_in_add:\n"+
+"    forall c : ('a, 'b), s : rel 'a 'b, x: 'a, y : 'b.\n"+
+"    mem c (add (x,y) s) <-> c = (x, y) \\/ mem c s\n"+
+"\n"+
+"  lemma break_power_times:\n"+
+"    forall r : rel 'a 'b, u : set 'a, v : set 'b.\n"+
+"    mem r (power (times u v)) <-> subset r (times u v)\n"+
+"\n"+
+"  lemma subset_of_times:\n"+
+"    forall r: rel 'a 'b, u: set 'a, v: set 'b.\n"+
+"    subset r (times u v)\n"+
+"       <-> forall x: 'a, y: 'b. mem (x,y) r -> mem x u /\\ mem y v\n"+
+"\n"+
+"  use Function\n"+
+"\n"+
+"  lemma apply_times:\n"+
+"    forall s:set 'a, x:'a, y:'b [apply (times s (singleton y)) x].\n"+
+"    mem x s -> apply (times s (singleton y)) x = y\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"theory MinMax\n"+
+"  use export set.Set\n"+
+"  use int.Int\n"+
+"  use Interval\n"+
+"  use IsFinite\n"+
+"\n"+
+"  function min (set int) : int\n"+
+"\n"+
+"  axiom min_belongs:\n"+
+"    forall s: (set int).\n"+
+"      subset s natural -> s <> empty -> mem (min s) s\n"+
+"\n"+
+"  axiom min_is_min:\n"+
+"    forall s: (set int).  subset s natural -> s <> empty ->\n"+
+"        forall x : int.  mem x s -> min s <= x\n"+
+"\n"+
+"  function max (set int) : int\n"+
+"\n"+
+"  axiom max_belongs:\n"+
+"    forall s: (set int).\n"+
+"      mem s (non_empty_finite_subsets natural) -> mem (max s) s\n"+
+"\n"+
+"  axiom max_is_max:\n"+
+"    forall s : (set int).  mem s (non_empty_finite_subsets natural) ->\n"+
+"      forall x: int.  mem x s -> x <= max s\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"\n"+
+"theory Iteration\n"+
+"  use export Relation\n"+
+"  use export Identity\n"+
+"  use export InverseDomRan\n"+
+"  use export Composition\n"+
+"  use int.Int\n"+
+"\n"+
+"  function iterate (rel 'a 'a) int : (rel 'a 'a)\n"+
+"\n"+
+"(*\n"+
+"  axiom iterate_def:\n"+
+"    forall a : rel 'a 'a, b :int.\n"+
+"    (iterate (a , b)) = if (b = 0) then (id (dom a)) else (semicolon (iterate (a , (b - 1))) a)\n"+
+"*)\n"+
+"  axiom iterate_zero:\n"+
+"    forall r : rel 'a 'a. iterate r 0 = id (dom r)\n"+
+"  axiom iterate_succ:\n"+
+"    forall r : rel 'a 'a, n:int. n > 0 ->\n"+
+"      iterate r n = semicolon r (iterate r (n-1))\n"+
+"\n"+
+"  function closure (rel 'a 'a) : (rel 'a 'a)\n"+
+"\n"+
+"  axiom closure_def:\n"+
+"    forall r : rel 'a 'a, u : ('a,'a).\n"+
+"    mem u (closure r) <-> exists x : int. x >= 0 /\\ mem u (iterate r x)\n"+
+"\n"+
+"  function closure1 (rel 'a 'a) : (rel 'a 'a)\n"+
+"\n"+
+"  axiom closure1_def:\n"+
+"    forall r : rel 'a 'a, u : ('a,'a).\n"+
+"    (mem u (closure1 r)) <-> exists x : int. x > 0 /\\ mem u (iterate r x)\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"theory Projection\n"+
+"\n"+
+"  use export Function\n"+
+"\n"+
+"  function prj1 (set 'a) (set 'b) : (rel ('a , 'b) 'a)\n"+
+"\n"+
+"  axiom prj1_def:\n"+
+"    forall a : (set 'a), b : (set 'b), x : 'a, y : 'b.\n"+
+"    (mem x a) /\\ (mem y b) ->\n"+
+"    (apply (prj1 a b) (x, y)) = x\n"+
+"\n"+
+"  function prj2 (set 'a) (set 'b) : (rel ('a , 'b) 'b)\n"+
+"\n"+
+"  axiom prj2_def:\n"+
+"    forall a : (set 'a), b : (set 'b), x : 'a, y : 'b.\n"+
+"    (mem x a) /\\ (mem y b) ->\n"+
+"    (apply (prj2 a b) (x, y)) = y\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"\n"+
+"theory Generalized\n"+
+"\n"+
+"  use export Function\n"+
+"\n"+
+"  function generalized_union (set (set 'a)) : (set 'a)\n"+
+"\n"+
+"  axiom generalized_union_def:\n"+
+"     forall s: set (set 'a), x: 'a.\n"+
+"        mem x (generalized_union s) <-> exists y: set 'a. mem x y /\\ mem y s\n"+
+"\n"+
+"end\n"+
+"\n"+
+"\n"+
+"theory SumSigma\n"+
+"  use export set.Set\n"+
+"  use bool.Bool\n"+
+"  use int.Int\n"+
+"\n"+
+"  (* NB: very first defintion for Sigma:\n"+
+"           not syntactically equivalent to the B-Book's one\n"+
+"           but very convenient for the translation done by bpo2why\n"+
+"  *)\n"+
+"  function sum (set int) : int\n"+
+"\n"+
+"  axiom sum_def0 : sum empty = 0\n"+
+"\n"+
+"  axiom sum_def1 : forall s: set int, x: int.\n"+
+"    mem x s -> sum s = x + sum (remove x s)\n"+
+"\n"+
+"  function sigma (p: 'a -> bool) (f: 'a -> int) : int =\n"+
+"    sum (map f (p))\n"+
+"end\n"+
+"\n"+
+"\n"+
+"(*\n"+
+"%%%%%%%%%%%%%%%%%%%%%%%%\n"+
+"%%% HAMOIR ALEXANDRE %%%\n"+
+"%%%%%%%%%%%%%%%%%%%%%%%%\n"+
+"*)\n"+
+"\n"+
+"\n"+
+"theory SetMore\n"+
+"\n"+
+"  use set.Set\n"+
+"  use PowerRelation\n"+
+"  use Function\n"+
+"  use InverseDomRan\n"+
+"\n"+
+"  lemma pair_equal_rewrite:\n"+
+"    forall a:'s,b:'s,c:'s,d:'s.\n"+
+"      (a,b) = (c,d) <-> (a = c /\\ b = d)\n"+
+"    \n"+
+"  lemma set_equal_def:\n"+
+"    forall a : set 's, b : set 's.\n"+
+"      a == b <-> (forall x : 's. mem x a <-> mem x b)\n"+
+"\n"+
+"  axiom set_equal_rewrite:\n"+
+"    forall a: set 's, b : set 's.\n"+
+"      a == b <-> a = b\n"+
+"      \n"+
+"  function inter_gen (set (set 's)) : set 's\n"+
+"  \n"+
+"  axiom inter_gen_def:\n"+
+"    forall a. subset a (power (all : set 's)) ->\n"+
+"      (forall x. mem x (inter_gen a) <->\n"+
+"      (forall s. mem s a -> mem x s))\n"+
+"      \n"+
+"  function union_gen (set (set 's)) : set 's\n"+
+"  \n"+
+"  axiom union_gen_def:\n"+
+"    forall a. subset a (power (all : set 's)) ->\n"+
+"      (forall x. mem x (union_gen a) <->\n"+
+"      (exists s. mem s a /\\ mem x s))\n"+
+"\n"+
+"end\n"+
+"\n"+
+"theory ImportAll\n"+
+"\n"+
+"  use export set.Set\n"+
+"  use export MoreSets\n"+
+"  use export B_BOOL\n"+
+"  use export Interval\n"+
+"  use export PowerSet\n"+
+"  use export Relation\n"+
+"  use export Composition\n"+
+"  use export InverseDomRan\n"+
+"  use export Image\n"+
+"  use export Function\n"+
+"  use export Restriction\n"+
+"  use export Overriding\n"+
+"  use export Identity\n"+
+"  use export Sequence\n"+
+"  use export BList\n"+
+"  use export IsFinite\n"+
+"  use export PowerRelation\n"+
+"  use export MinMax\n"+
+"  use export Iteration\n"+
+"  use export Projection\n"+
+"  use export Generalized\n"+
+"  use export SumSigma\n"+
+"  use export SetMore\n"+
+"\n"+
+"end\n";
 public static final String[] templates = {
 "CppEvbtH",CppEvbtH,"HtmlCss",HtmlCss,"HtmqFooter",HtmqFooter,"HtmqHeader",HtmqHeader,"TeXDefinitions",TeXDefinitions,"TeXHeader",TeXHeader,"TeXPackages",TeXPackages,"empty",empty};
 }

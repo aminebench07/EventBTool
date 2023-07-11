@@ -135,6 +135,20 @@ public class FormulaFactory
         return new Formula(Node.SET_SYMBOL, Symbols.intern(s), meta);
     }
 
+    // AH
+    public static
+    Formula newTypeParameterSymbol (String s, Formula meta)
+    {
+        return new Formula(Node.TYPE_PARAMETER_SYMBOL, Symbols.intern(s), null);
+    }
+
+    // AH
+    public static
+    Formula newTypedefSymbol (String s, Formula meta)
+    {
+        return new Formula(Node.TYPEDEF_SYMBOL, Symbols.intern(s), null);
+    }
+
     public static
     Formula newEmptySet(Formula meta)
     {
@@ -696,6 +710,41 @@ public class FormulaFactory
     Formula newFunctionInvertedApplication (Formula left, Formula right, Formula meta)
     {
         return new Formula(Node.FUNC_INV_APP, left, right, meta);
+    }
+
+    // AH
+    public static
+    Formula newOperatorExpression (Formula op, List<Formula> inners)
+    {
+        return new Formula(Node.OPERATOR_EXPRESSION, op, inners, null);
+    }
+
+    // AH
+    public static
+    Formula newInfixOperatorExpression (Formula op, Formula left, Formula right)
+    {
+        return new Formula(Node.INFIX_OPERATOR_EXPRESSION, op, left, right, null);
+    }
+
+    // AH
+    public static
+    Formula newDatatype (Formula dt, List<Formula> inners)
+    {
+        return new Formula(Node.DATATYPE, dt, inners, null);
+    }
+
+    // AH
+    public static
+    Formula newConstructor(Formula cons, List<Formula> inners)
+    {
+        return new Formula(Node.CONSTRUCTOR, cons, inners, null);
+    }
+
+    // AH
+    public static
+    Formula newDestructor(Formula dest, Formula element)
+    {
+        return new Formula(Node.DESTRUCTOR, dest, element, null);
     }
 
 }

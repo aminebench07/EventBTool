@@ -274,4 +274,31 @@ public class Unicode
         return o.toString();
     }
 
+    // AH //TODO: this is the exact same code as cpp but with (* instead of /*
+    public static
+    String commentToWhy(String s)
+    {
+        s = s.trim();
+        String[] rows = s.split("\n", -1);
+        if (rows.length == 1) return "(* "+rows[0] + " *)";
+        StringBuilder o = new StringBuilder();
+        o.append("(* ");
+        boolean nl = false;
+        for (String r : rows)
+        {
+            String l = r.trim();
+            if (nl)
+            {
+                o.append("\n");
+            }
+            else
+            {
+                nl = true;
+            }
+            o.append(l);
+        }
+        o.append(" *)\n");
+        return o.toString();
+    }
+
 }

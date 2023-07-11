@@ -30,4 +30,17 @@ public class VisitFormula
         return v.cnvs().getSinceMark();
     }
 
+    // AH
+    public static void walkkTyped(WalkFormula v, Formula f)
+    {
+        v.startVisitingTyped(f);
+    }
+
+    public static String walkTyped(RenderFormula v, Formula f)
+    {
+        v.cnvs().setMark();
+        v.startVisitingTyped(f);
+        return v.cnvs().getSinceMark();
+    }
+
 }

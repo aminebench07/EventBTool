@@ -89,6 +89,9 @@ class Formula
         case HTMQ:
             gen = new RenderFormulaHtmq(c);
             break;
+        case WHY:
+            gen = new RenderFormulaWhy(c);
+            break;
         default:
         assert (false) : "Unknown render target \""+c.renderTarget()+"\" when translating a formula into a string.";
         }
@@ -97,6 +100,43 @@ class Formula
         if (with_metas) gen.addMetas();
 
         VisitFormula.walk(gen, this);
+        return gen.cnvs().render();
+    }
+
+    // AH
+    public String toStringTyped(Canvas c)
+    {
+        return toStringInternalTyped(c, false, false);
+    }
+
+    private String toStringInternalTyped(Canvas c, boolean with_types, boolean with_metas)
+    {
+        RenderFormula gen = null;
+        switch (c.renderTarget())
+        {
+        case PLAIN:
+            gen = new RenderFormulaUnicode(c);
+            break;
+        case TERMINAL:
+            gen = new RenderFormulaUnicode(c);
+            break;
+        case TEX:
+            gen = new RenderFormulaTeX(c);
+            break;
+        case HTMQ:
+            gen = new RenderFormulaHtmq(c);
+            break;
+        case WHY:
+            gen = new RenderFormulaWhy(c);
+            break;
+        default:
+        assert (false) : "Unknown render target \""+c.renderTarget()+"\" when translating a formula into a string.";
+        }
+
+        if (with_types) gen.addTypes();
+        if (with_metas) gen.addMetas();
+
+        VisitFormula.walkTyped(gen, this);
         return gen.cnvs().render();
     }
 
@@ -260,6 +300,24 @@ class Formula
         meta_ = meta;
     }
 
+    // AH
+    Formula(Node node, Formula left, List<Formula> inners, Formula meta)
+    {
+        assert (node != null && left != null && inners != null) : "Internal error when creating formula, args must be non-null.";
+
+        node_ = node;
+        children_ = new Formula[inners.size()+1];
+        children_[0] = left;
+        int i = 1;
+        for (Formula f : inners)
+        {
+            children_[i] = f;
+            assert (f != null) : "internal error: child formula must never be null!";
+            i++;
+        }
+        meta_ = meta;
+    }
+
     public static
     Formula fromString (String s, SymbolTable fc)
     {
@@ -281,6 +339,36 @@ class Formula
     {
         log.debug("parsing %s", s);
         Formula f = parse(s, fc);
+        if (f == null)
+        {
+            System.out.print("Could not parse formula :\n    ");
+            System.out.println(s);
+            System.out.println("\nWhile using symbol table:");
+            fc.print();
+        }
+        return f;
+    }
+
+    public static
+    Formula fromStringWithNonFreeVariables(String s, SymbolTable fc)
+    {
+        log.debug("parsing %s", s);
+        Formula f = parseWithNonFreeVariables(s, fc);
+        if (f == null)
+        {
+            System.out.print("Could not parse formula :\n    ");
+            System.out.println(s);
+            System.out.println("\nWhile using symbol table:");
+            fc.print();
+        }
+        return f;
+    }
+
+    public static
+    Formula fromStringAndPushNonFreeVariables(String s, SymbolTable fc)
+    {
+        log.debug("parsing %s", s);
+        Formula f = parseAndPushNonFreeVariables(s, fc);
         if (f == null)
         {
             System.out.print("Could not parse formula :\n    ");
@@ -410,6 +498,79 @@ class Formula
 //            System.out.println("\n\nPARSING-----------------");
 //            System.out.println(line);
             tree = parser.start();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        if (parser.getNumberOfSyntaxErrors() > 0)
+        {
+            return null;
+        }
+
+        FormulaBuilder fbv = new FormulaBuilder(tokens);
+        Formula result = fbv.visit(tree);
+
+        return result;
+    }
+
+    /* MP TODO check if this is needed */
+    private static Formula parseWithNonFreeVariables(String line, SymbolTable fc)
+    {
+        log.trace("parsing "+line);
+        CharStream lineStream = CharStreams.fromString(line);
+
+        EvBFormulaLexer lexer = new EvBFormulaLexer(lineStream);
+        lexer.symbol_table = fc;
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        EvBFormulaParser parser = new EvBFormulaParser(tokens);
+        parser.symbol_table = fc;
+        //parser.setTrace(true);
+        ParseTree tree = null;
+        try
+        {
+            // Here we add the non free variables options
+            parser.enableAllSymbolsAreNonFreeVars();
+            tree = parser.start();
+            parser.disableAllSymbolsAreNonFreeVars();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        if (parser.getNumberOfSyntaxErrors() > 0)
+        {
+            return null;
+        }
+
+        FormulaBuilder fbv = new FormulaBuilder(tokens);
+        Formula result = fbv.visit(tree);
+
+        return result;
+    }
+
+    /* MP TODO check if this is needed */
+    private static Formula parseAndPushNonFreeVariables(String line, SymbolTable fc)
+    {
+        log.trace("parsing "+line);
+        CharStream lineStream = CharStreams.fromString(line);
+
+        EvBFormulaLexer lexer = new EvBFormulaLexer(lineStream);
+        lexer.symbol_table = fc;
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        EvBFormulaParser parser = new EvBFormulaParser(tokens);
+        parser.symbol_table = fc;
+        //parser.setTrace(true);
+        ParseTree tree = null;
+        try
+        {
+            // Here we add the non free variables options
+            parser.enableAllSymbolsAreNonFreeVars();
+            tree = parser.start();
+            parser.pushFrameNonFreeVars();
+            parser.disableAllSymbolsAreNonFreeVars();
         }
         catch (Exception e)
         {
