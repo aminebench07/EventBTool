@@ -1,4 +1,5 @@
 // Copyright (C) 2021 Viklauverk AB
+// Copyright (C) 2022 Toulouse INP
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -94,6 +95,7 @@ renderTarget
    | 'terminal'
    | 'tex'
    | 'htmq'
+   | 'why'
    ;
 
 renderAttribute
@@ -190,7 +192,7 @@ push
     ;
 
 format
-    : 'plain' | 'terminal' | 'tex' | 'htmq';
+    : 'plain' | 'terminal' | 'tex' | 'htmq' | 'why';
 
 metaaa
     : 'meta' ;
@@ -208,8 +210,8 @@ hiding
 : 'noc' | 'nol' | 'non';
 
 set
-//G set default format {plain|terminal|tex|htmq} § Set the default format for rendering.
-//G set default hiding {nol|noc}                 § Set what parts to hide by default.
+//G set default format {plain|terminal|tex|htmq|why}    § Set the default format for rendering.
+//G set default hiding {nol|noc}                        § Set what parts to hide by default.
 //show:Usage: set default format <format>
 //show:       set default hiding <hiding>
 //show:

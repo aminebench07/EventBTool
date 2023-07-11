@@ -1,4 +1,5 @@
 // Copyright (C) 2021 Viklauverk AB
+// Copyright (C) 2022 Toulouse INP
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -35,6 +36,18 @@ public List<String> non_free_vars = new LinkedList<>();
 void pushFrame(EvBFormulaParser.ListOfNonFreeSymbolsContext sc)
 {
     EvBFormulaParser.ListOfNonFreeVariablesContext vars = (EvBFormulaParser.ListOfNonFreeVariablesContext)sc;
+    List<String> syms = new LinkedList<>();
+    List<TerminalNode> symbols = vars.SYMBOL();
+    for (TerminalNode tn : symbols)
+    {
+        syms.add(tn.getText());
+    }
+    symbol_table.pushFrame(syms);
+}
+
+void pushFrame(EvBFormulaParser.NonFreeSymbolsPatternContext sc)
+{
+    EvBFormulaParser.NonFreeVariablesPatternContext vars = (EvBFormulaParser.NonFreeVariablesPatternContext)sc;
     List<String> syms = new LinkedList<>();
     List<TerminalNode> symbols = vars.SYMBOL();
     for (TerminalNode tn : symbols)
@@ -191,7 +204,7 @@ MUL: '*' | '∗';
 DIV: '/' | '÷';
 EXP: '^';
 
-CARD: 'card';
+/* MaPa Check the use */ CARD: 'card';
 FINITE: 'finite';
 PARTITION: 'partition';
 
@@ -223,6 +236,10 @@ listOfNonFreeSymbols
 
 listOfSymbols
    : SYMBOL (',' SYMBOL)*                          # ListOfVariables
+   ;
+
+nonFreeSymbolsPattern
+   : SYMBOL (MAPSTO SYMBOL)*                       # NonFreeVariablesPattern
    ;
 
 predicate
@@ -260,7 +277,17 @@ predicate
    | left=expression NOT_STRICT_SUBSET meta? right=expression # NotStrictSubSet
    | FINITE '(' inner=expression ')'                       # FiniteSet
    | PARTITION '(' left=expression ',' right=listOfExpressions ')' # PartitionSet
+   /* begin AH */
+   | { symbol_table.isOperatorSymbol(_input.LT(1).getText()) && symbol_table.getOperator(_input.LT(1).getText()).isPredicate() }? operator=SYMBOL meta? ('(' expression (',' expression)* ')')? # OperatorPredicateExpression
+   /* end AH */
 ;
+
+/* begin AH */
+/* I had to define infixOp outside of expression or else there is a left recursive error */
+infixOp
+   : { symbol_table.isOperatorSymbol(_input.LT(1).getText()) && symbol_table.getOperator(_input.LT(1).getText()).isInfix() }? SYMBOL # InfixOperatorSymbol
+   ;
+/* end AH */
 
 expression
    : ETRUE meta?                                    # ExpressionTRUE
@@ -274,6 +301,13 @@ expression
    | { symbol_table.isVariableSymbol(_input.LT(1).getText()) }?   variable=SYMBOL  PRIM? meta? # ExpressionVariable
    | { symbol_table.isConstantSymbol(_input.LT(1).getText()) }?   constant=SYMBOL meta?        # ExpressionConstant
    // Should we be able to talk about all functions such that their applications give such and such result? For the moment, we can't.
+   /* begin AH */
+   | left=expression operator=infixOp right=expression # InfixOperatorExpression /* AH : I had to define infixOp outside of expression or else there is a left recursive error */
+   | { symbol_table.isOperatorSymbol(_input.LT(1).getText()) && !symbol_table.getOperator(_input.LT(1).getText()).isPredicate()}?   operator=SYMBOL meta? ('(' expression (',' expression)* ')')? # OperatorExpression
+   | { symbol_table.isDatatypeSymbol(_input.LT(1).getText()) }?   datatype=SYMBOL meta? ('(' expression (',' expression)* ')')? # Datatype
+   | { symbol_table.isConstructorSymbol(_input.LT(1).getText()) }?   constructor=SYMBOL meta? ('(' expression (',' expression)* ')')? # Constructor
+   /* end AH */
+   | { symbol_table.isDestructorSymbol(_input.LT(1).getText()) }?   destructor=SYMBOL meta? '(' dt=expression ')' # Destructor // AH
    | { symbol_table.isVariableSymbol(_input.LT(1).getText()) }?   variable=SYMBOL PRIM? INV? meta? '(' inner=expression ')' # VariableFunctionApplication
    | { symbol_table.isSetSymbol(_input.LT(1).getText()) }? sym=SYMBOL meta?  # SetSymbol
    | { symbol_table.isConstantSymbol(_input.LT(1).getText()) }?   constant=SYMBOL meta? '(' inner=expression ')' # ConstantFunctionApplication
@@ -296,6 +330,15 @@ expression
     | ID   meta?                                    # IdSet
     | PRJ1 meta?                                    # Prj1
     | PRJ2 meta?                                    # Prj2
+    /* begin AH */ 
+    | { symbol_table.isSetSymbol(_input.LT(1).getText()) }? sym=SYMBOL meta?  # SetSymbol
+    | { symbol_table.isAnySymbol(_input.LT(1).getText()) }? sym=SYMBOL meta? # AnySetSymbol
+    | { symbol_table.isNonFreeVariableSymbol(_input.LT(1).getText()) }?   variable=SYMBOL meta? # NonFreeSetVariable
+    | { symbol_table.isVariableSymbol(_input.LT(1).getText()) }? variable=SYMBOL PRIM? meta? # SetVariable
+    | { symbol_table.isConstantSymbol(_input.LT(1).getText()) }? constant=SYMBOL meta? # SetConstant
+    | { symbol_table.isTypeParameterSymbol(_input.LT(1).getText()) }? sym=SYMBOL # TypeParameterSymbol
+    | { symbol_table.isTypedefSymbol(_input.LT(1).getText()) }? sym=SYMBOL # TypedefSymbol
+    /* end AH */ 
     | NAT meta?               # NATSet
     | NAT1 meta?              # NAT1Set
     | INT meta?               # INTSet
@@ -312,7 +355,16 @@ expression
     | left=expression OFTYPE meta? right=expression  # OfType
     | '{' expression (',' expression)* '}' meta? # EnumeratedSet
 
-    | from=expression operator=UPTO meta? to=expression # UpTo
+    | '{' meta?
+        { enableAllSymbolsAreNonFreeVars(); } // The expression definition implicitly declares the non-free vars!
+        formula=expression
+        { disableAllSymbolsAreNonFreeVars(); pushFrameNonFreeVars(); }
+        MID pred=predicate
+        { popFrame(); }
+      '}'
+      # SetComprehensionSpecial
+
+    | from=expression UPTO meta? to=expression     # UpTo
     | left=expression UNION meta? right=expression # SetUnion
     | left=expression INTER meta? right=expression # SetIntersection
     | left=expression SETMINUS meta? right=expression # SetMinus
@@ -340,6 +392,7 @@ expression
     | GUNION meta? '(' inner=expression ')' # GeneralizedUnion
     | GINTER meta? '(' inner=expression ')' # GeneralizedIntersection
 
+    /* begin 2023 update */
     | '{' meta? vars=listOfNonFreeSymbols
           { pushFrame(((SetComprehensionContext)_localctx).vars); }
       QDOT pred=predicate MID formula=expression
@@ -355,13 +408,41 @@ expression
         { popFrame(); }
       '}'
       # SetComprehensionSpecial
+    /* end 2023 update */
 
+    /* begin MaPa: check with the 2023 updates */
+//    | LAMBDA meta? vars=nonFreeSymbolsPattern
+//          { pushFrame(((LambdaAbstractionExpressionContext)_localctx).vars); }
+//       QDOT pred=predicate MID formula=expression
+//          { popFrame(); }
+//      # LambdaAbstractionExpression
+      // MaPa : This one and the next one are identical
+      // Should be an identifier pattern (not a list of non free symbols)
+
+//    | LAMBDA meta? vars=nonFreeSymbolsPattern
+//          { pushFrame(((LambdaAbstractionSetContext)_localctx).vars); }
+//       QDOT pred=predicate MID formula=expression
+//          { popFrame(); }
+//      # LambdaAbstractionSet
+      // MaPa : This one and the next one are identical
+      // Should be an identifier pattern (not a list of non free symbols)
+
+//    | '{' meta? vars=listOfNonFreeSymbols
+//          { pushFrame(((SetComprehensionContext)_localctx).vars); }
+//      QDOT pred=predicate MID formula=expression
+//          { popFrame(); }
+//      '}'
+//      # SetComprehension
+    /* end MaPa: check with the 2023 updates */
+
+    /* MaPa: Are variables and QDOT mandatory ? */
     | QUNION meta? vars=listOfNonFreeSymbols
           { pushFrame(((QuantifiedUnionContext)_localctx).vars); }
        QDOT pred=predicate MID inner=expression
           { popFrame(); }
       # QuantifiedUnion
 
+    /* MaPa: Are variables and QDOT mandatory ? */
     | QINTER meta? vars=listOfNonFreeSymbols
           { pushFrame(((QuantifiedIntersectionContext)_localctx).vars); }
        QDOT pred=predicate MID inner=expression
@@ -376,6 +457,7 @@ expression
       # LambdaAbstractionExpression
 */
 
+    /* begin 2023 update */
     | '{' meta?
         { enableAllSymbolsAreNonFreeVars(); } // The expression definition implicitly declares the non-free vars!
         formula=expression
@@ -392,6 +474,7 @@ expression
        QDOT pred=predicate MID formula=expression
           { popFrame(); }
       # LambdaAbstractionExpression
+    /* end 2023 update */
 
     ;
 
