@@ -548,7 +548,7 @@ public static String TeXPackages =
 "%\\usepackage{blindtext} % Use this to debug latex.\n"+
 "%\\usepackage{showframe} % Use this to debug latex.\n"+
 "";
-public static String Why3Definitions=
+public static String Why3Definitions =
 "(*\n"+
 " bpo2why_prelude.why: formalisation of B operators in Why3\n"+
 "\n"+
